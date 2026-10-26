@@ -3,6 +3,7 @@
 ## Unreleased
 
 - `jam`, `jam-to-tasks`, `jam-to-ticket` and `jam-proof-table` handle screenshot, replay and silent Jams, and Jams that raise several problems: the router reads the transcript and a silent Jam's description, a task cites its field when there is no timestamp, a screenshot counts as proof, and an existing ticket covers only its own problem.
+- The README groups the skills by what you hand the agent and what you get back, with one plain line each, and lists the requirements one per line. It follows Jam's docs writing rules: no semicolons, and bold only for UI labels.
 - Added `jam`: type `/jam` and what you want, and it routes to the matching Jam skill. It also catches a bare jam.dev link or a vague ask, reads the Jam, and routes by what it holds; a clear ask still goes straight to its own skill.
 - The README lists skills as one bulleted list instead of a table plus a section per skill. `scripts/check.mjs` checks for the list entry.
 - The skills no longer download and run an installer. If `jam` is missing, they ask you to install it from jam.dev/cli. Addresses the remote-code-execution audit finding on `jam-proof` and `jam-annotate`.
