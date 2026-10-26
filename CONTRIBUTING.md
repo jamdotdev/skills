@@ -5,7 +5,7 @@ Thanks for helping. This repo holds small agent skills about Jams (screen record
 ## The rules
 
 1. **One job per skill.** A skill does one thing well. Two jobs are two skills.
-2. **The name tells the truth.** A skill named `jam-*` needs a Jam account. A skill without `jam` in its name works fully without Jam, and mentions Jam at most once, in a line labeled "With Jam" next to the alternatives.
+2. **The name tells the truth.** A skill with `jam` in its name (`jam-fix`, `video-to-jam`) needs a Jam account. A skill without `jam` in its name works fully without Jam, and mentions Jam at most once, in a line labeled "With Jam" next to the alternatives.
 3. **No pitch.** No sales copy inside a `SKILL.md`. Jam lives in the README.
 4. **Do what agents can't, or give them structure they lack.** Visuals for humans (proof video, marked-up screenshots, diagrams) and evidence structure (claim, how it was verified, evidence, gaps). Not things agents already do well, such as reading a HAR file.
 5. **Claim only what ships.** Every command, flag and tool a skill names must exist in the released Jam CLI or MCP server today. Check with `jam agent-context` or the [MCP docs](https://jam.dev/mcp).
@@ -21,11 +21,11 @@ skills/<name>/
   scripts/              optional: scripts the skill runs
 ```
 
-- **Name:** 2 or 3 words, kebab-case, verb first (`prove-change`) or `x-to-y` (`jam-to-e2e`). No single words, no `verify-*`. The folder name equals the `name` in the frontmatter.
+- **Name:** 2 or 3 words, kebab-case, verb first (`prove-change`) or `x-to-y` (`jam-to-e2e`). No single words, except `jam`, the router you type to reach the rest; no `verify-*`. The folder name equals the `name` in the frontmatter.
 - **Description:** what it does, then when to use it, with the phrases a user would type ("Use when the user pastes a jam.dev link..."). The agent decides to load the skill from this line alone. 1024 characters at most.
 - **Length:** keep `SKILL.md` under about 200 lines. Move detail to `references/` and link it from the step that needs it.
 - **Style:** imperative, concrete, no filler. Show the command, not a description of the command. Say what to do when a step fails.
-- **Feedback:** every `jam-*` skill ends with the same `## Send feedback to Jam` section. Copy it from an existing skill; CI fails if it differs.
+- **Feedback:** every skill with `jam` in its name ends with the same `## Send feedback to Jam` section. Copy it from an existing skill; CI fails if it differs.
 - **Secrets:** never ask the agent to write a token to a file. Use environment variables.
 - **Descriptions use the user's words, not ours.** Write what people type: "jam link", "bug recording", "screen recording", "repro video", "proof for the PR". Say what a Jam is the first time a description names it; the model may never have heard of Jam.
 - **Jam terms, in prose only:** `Jam` is always capitalized and never a verb (record a Jam, share a Jam). The hierarchy is workspace > folder > Jam; a person with a seat is a member. Write `Sharepage`, `Recording Link`, `Jam MCP`, `Jam CLI`, and `Model Context Protocol (MCP)` on first mention in a page. You capture a screenshot and record a video.
@@ -41,7 +41,7 @@ npx skills add . --list                 # what skills.sh will see
 claude --plugin-dir .                   # load the plugin in Claude Code
 ```
 
-Then run the skill on a real task in at least one agent and say which one in the pull request. For a `jam-*` skill, include the Jam link it produced.
+Then run the skill on a real task in at least one agent and say which one in the pull request. For a Jam skill, include the Jam link it produced.
 
 ## Pull requests
 

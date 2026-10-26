@@ -1,0 +1,4 @@
+interface:
+  display_name: "Jam to Tasks"
+  short_description: "Turn a narrated Jam into a task list, then work it"
+  default_prompt: "Use $jam-to-tasks to list every change asked for in this Jam and work through them."

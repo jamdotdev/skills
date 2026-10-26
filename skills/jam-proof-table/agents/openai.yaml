@@ -1,0 +1,4 @@
+interface:
+  display_name: "Jam Proof Table"
+  short_description: "Tie each claim to the Jam that shows it"
+  default_prompt: "Use $jam-proof-table to list each claim from this run with its status and Jam link."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Jam to Ticket"
+  short_description: "File a Jam as a ready-to-work ticket"
+  default_prompt: "Use $jam-to-ticket to file this Jam as an issue in our tracker."

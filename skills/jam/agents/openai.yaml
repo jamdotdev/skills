@@ -1,0 +1,4 @@
+interface:
+  display_name: "Jam"
+  short_description: "Say what you want with a Jam; it picks the skill"
+  default_prompt: "Use $jam to handle this Jam."

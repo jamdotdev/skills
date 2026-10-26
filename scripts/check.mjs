@@ -52,20 +52,27 @@ for (const dir of skillDirs) {
   }
   if (!existsSync(join("skills", dir, "agents", "openai.yaml"))) fail(`${dir}: missing agents/openai.yaml`);
   if (!readme.includes(`- [${dir}](./skills/${dir}/SKILL.md): `)) fail(`${dir}: missing "- [${dir}](./skills/${dir}/SKILL.md): " entry in README.md`);
-  if (dir.startsWith("jam-")) {
+  if (dir.split("-").includes("jam")) {
     const feedback = src.match(/\n## Send feedback to Jam\n[\s\S]*?(?=\n## |$)/)?.[0];
-    if (!feedback) fail(`${skillPath}: missing "## Send feedback to Jam" section; copy it from another jam-* skill`);
-    else if ((feedbackSection ??= feedback) !== feedback) fail(`${skillPath}: "## Send feedback to Jam" differs from the other jam-* skills`);
+    if (!feedback) fail(`${skillPath}: missing "## Send feedback to Jam" section; copy it from another Jam skill`);
+    else if ((feedbackSection ??= feedback) !== feedback) fail(`${skillPath}: "## Send feedback to Jam" differs from the other Jam skills`);
   } else {
     const mentions = src.slice(fm[0].length).match(/\bjam\b/gi)?.length ?? 0;
-    if (mentions > 1) fail(`${skillPath}: mentions Jam ${mentions} times; skills without the jam- prefix may mention it once`);
+    if (mentions > 1) fail(`${skillPath}: mentions Jam ${mentions} times; skills without jam in their name may mention it once`);
   }
+}
+
+// The jam router names every other skill, and only skills that exist.
+if (skillDirs.includes("jam")) {
+  const routed = new Set([...read("skills/jam/SKILL.md").matchAll(/^\|.*\| `([a-z0-9-]+)` \|$/gm)].map((m) => m[1]));
+  for (const dir of skillDirs) if (dir !== "jam" && !routed.has(dir)) fail(`skills/jam/SKILL.md: routing table does not name ${dir}`);
+  for (const name of routed) if (!skillDirs.includes(name)) fail(`skills/jam/SKILL.md: routing table names missing skill ${name}`);
 }
 
 // The CLI install block is copied into every skill that runs `jam`; keep the copies identical.
 const setupBlocks = new Map();
 for (const file of mdFiles.filter((file) => file.startsWith("skills/") && file.endsWith(".md"))) {
-  const block = read(file).match(/```bash\n[^`]*native\.jam\.dev\/install[^`]*```/)?.[0];
+  const block = read(file).match(/```bash\n[^`]*jam is not installed[^`]*```/)?.[0];
   if (block) setupBlocks.set(file, block);
 }
 if (new Set(setupBlocks.values()).size > 1) {
