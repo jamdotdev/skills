@@ -54,9 +54,13 @@ jam get jam "$ID" --json
 it, each with `id` and `url`. Then search the tracker for the Jam's id and
 full URL, then for two or three words from its title. Tracker search is
 fuzzy and returns near misses: a match is a ticket whose body or
-attachments hold this Jam's id. On a match, return that ticket and stop.
-That also answers "was this Jam ever ticketed?". Add the new Jam to the
-existing ticket only when the user asks.
+attachments hold this Jam's id.
+
+"Was this Jam ever ticketed?" is read-only: return the matches and stop.
+Otherwise keep the matches and read on. A match covers only the problems its
+ticket describes, so a Jam that raises several problems (step 4) still needs
+tickets for the rest. When every problem is covered, return those tickets and
+stop. Add the new Jam to an existing ticket only when the user asks.
 
 ## 3. Read the Jam
 

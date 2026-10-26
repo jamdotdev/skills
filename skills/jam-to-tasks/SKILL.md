@@ -56,6 +56,9 @@ the mic off, that answer is final.
 
 ## 2. Read the whole transcript
 
+Only a video with the mic on has one. Otherwise skip to step 3 and take the
+asks from the title, description and comments.
+
 ```bash
 jam get transcript "$ID" --json    # WebVTT in the "transcript" field
 ```
@@ -86,6 +89,9 @@ FRAMES=$(mktemp -d)    # outside the repo, so frames never get committed
 jam get frames "$ID" --overview --size medium --out "$FRAMES"
 jam get frames "$ID" --at 14220,18720,46140 --size medium --out "$FRAMES"
 ```
+
+A screenshot Jam has no frames: open `jam get screenshots "$ID" --out
+"$FRAMES"` instead. A replay has neither; use its user events.
 
 Open every frame. The cursor is often the only clue to what "here" means.
 When no cursor shows, or the frame is blurred mid-scroll, pull one 500 ms
@@ -133,8 +139,9 @@ and then in small units, not one large commit.
 
 ## 7. Check coverage and close
 
-Re-read the transcript top to bottom. Every sentence that asks for something
-maps to a task id. Then give every id an outcome: done (with files),
+Re-read the transcript top to bottom, or with no narration the title,
+description and comments. Every sentence that asks for something maps to a
+task id. Then give every id an outcome: done (with files),
 deferred (with the reason), needs an answer, or could not reproduce. Write
 the totals: "11 asks: 9 done, 1 deferred, 1 needs an answer."
 

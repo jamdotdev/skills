@@ -30,7 +30,11 @@ the order asked, and pass what the first one found to the next.
 ## A Jam link with no clear ask
 
 Read the Jam's details first: the `getDetails` MCP tool, or
-`jam get jam <id> --json`. Then route by what it holds:
+`jam get jam <id> --json`. For a video with the mic on (`micEnabled`), read
+the transcript too (`getVideoTranscript`, or `jam get transcript <id> --json`):
+the spoken asks are there, and a title like "Feedback" says nothing about
+them. If captions are not ready, wait a minute and retry once, then route on
+the details and say so. Then route by what it holds:
 
 - A narrated walkthrough that asks for several changes: `jam-to-tasks`.
 - One bug, an error, or a failed request: `jam-fix`. It diagnoses without

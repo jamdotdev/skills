@@ -79,8 +79,17 @@ the oldest.
 
 ```bash
 jam get jam "$ID" --json                                  # reads back, type, duration
-jam get frames "$ID" --at 48000 --size medium --out "$(mktemp -d)"   # outside the repo
 ```
+
+Then check it by its `type`; the other types have no video frames:
+
+```bash
+jam get frames "$ID" --at 48000 --size medium --out "$(mktemp -d)"   # video; outside the repo
+jam get screenshots "$ID" --out "$(mktemp -d)"                       # screenshot
+```
+
+A replay has no frames or screenshots: check it in its events, console and
+network, and mark the row unconfirmed when they cannot settle the claim.
 
 Open the frame at the moment the claim shows up; `--at` must be below the
 Jam's `duration`. A blank page, a single frozen frame, or the wrong tab is
