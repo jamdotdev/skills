@@ -73,8 +73,9 @@ trailing silence ("Thank you.") is transcription noise, not an ask.
 Open a task each time the person raises something: a bug, wrong data, a
 visual nit, a behavior change, a feature request. All count. Give each one:
 
-- an id (`T1`, `T2`, ...) and its start time
-- the verbatim quote
+- an id (`T1`, `T2`, ...) and where it came from: its start time in the
+  narration, or the field (title, description, a comment) of a silent Jam
+- the verbatim quote, from that source
 - a type: bug, visual, behavior, feature, reference
 
 ## 4. Resolve every "this"

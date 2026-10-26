@@ -36,7 +36,8 @@ the spoken asks are there, and a title like "Feedback" says nothing about
 them. If captions are not ready, wait a minute and retry once, then route on
 the details and say so. Then route by what it holds:
 
-- A narrated walkthrough that asks for several changes: `jam-to-tasks`.
+- Several changes asked for, in the narration or in the title, description
+  or comments of a silent Jam: `jam-to-tasks`.
 - One bug, an error, or a failed request: `jam-fix`. It diagnoses without
   changing code, so it is the safe default.
 - Neither is clear: ask one question that names the options in plain words

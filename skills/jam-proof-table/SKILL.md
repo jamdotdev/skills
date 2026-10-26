@@ -91,9 +91,11 @@ jam get screenshots "$ID" --out "$(mktemp -d)"                       # screensho
 A replay has no frames or screenshots: check it in its events, console and
 network, and mark the row unconfirmed when they cannot settle the claim.
 
-Open the frame at the moment the claim shows up; `--at` must be below the
-Jam's `duration`. A blank page, a single frozen frame, or the wrong tab is
-not proof. Record it again with `jam-proof` and say that you did.
+For a video, open the frame at the moment the claim shows up; `--at` must be
+below the Jam's `duration`. A blank page, a single frozen frame, or the wrong
+tab is not proof. A screenshot is one still image by design: it is proof when
+the claim is visible in it. When the Jam does not show the claim, record it
+again with `jam-proof` and say that you did.
 
 Some claims happen off screen: an API status, a count, a sent message. Check
 those in `jam get network`, `jam get console` or `jam get user-events`, and
