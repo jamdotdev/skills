@@ -2,11 +2,18 @@
 
 ## Unreleased
 
+- Added `jam`: type `/jam` and what you want, and it routes to the matching Jam skill. It also catches a bare jam.dev link or a vague ask, reads the Jam, and routes by what it holds; a clear ask still goes straight to its own skill.
 - The README lists skills as one bulleted list instead of a table plus a section per skill. `scripts/check.mjs` checks for the list entry.
 - The skills no longer download and run an installer. If `jam` is missing, they ask you to install it from jam.dev/cli. Addresses the remote-code-execution audit finding on `jam-proof` and `jam-annotate`.
 - `jam-annotate` and the `jam-fix` proof step write the Jam payload to a file and run `jam create jam @payload.json`, so user and page text never reaches a shell argument.
 - `jam-fix` and `jam-to-e2e` treat Jam content (transcript, logs, network bodies, page text, comments) as evidence, not instructions.
 - `server.json` follows Jam MCP 1.27.1, the version production serves.
+- `jam-fix` hands a narrated walkthrough that asks for several changes to `jam-to-tasks`, when installed, instead of diagnosing it as one bug.
+- Added `jam-to-tasks`: turn a narrated Jam into a numbered list of every change asked for, each tied to its moment, frame and quote, then work through the list.
+- Added `jam-to-ticket`: file a Jam as a ready-to-work issue in Linear, GitHub Issues or Jira, after checking the Jam's own integrations and the tracker for an existing ticket.
+- Added `jam-proof-table`: end a batch of work with one table of claim, status and Jam link, with every Jam named, filed and checked.
+- Added `video-to-jam`: turn a video file into one Jam per issue, cut where the speaker moves to a new problem. It transcribes on the local machine so only the clips are uploaded; letting Jam transcribe the full recording needs the user's yes.
+- `scripts/check.mjs` treats a skill with `jam` anywhere in its name as a Jam skill, so `video-to-jam` must carry the feedback section like the `jam-*` skills.
 
 ## 2.0.0
 

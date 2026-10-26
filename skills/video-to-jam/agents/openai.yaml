@@ -1,0 +1,4 @@
+interface:
+  display_name: "Video to Jam"
+  short_description: "Split a video into one Jam per issue"
+  default_prompt: "Use $video-to-jam to turn this video into one Jam per issue."

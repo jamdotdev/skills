@@ -40,6 +40,9 @@ whether the mic was on). **Follow it before anything below.** Take its
 `high` priority paths first. The steps that follow are for when the guide is
 thin or you need to dig deeper.
 
+A narrated walkthrough that asks for several changes, rather than one bug,
+belongs to `jam-to-tasks` when it is installed: hand off and stop.
+
 A fresh Jam may answer "not ready yet" from the event tools. It is still
 processing: wait a few seconds and retry, up to three times, then work from
 what is ready and say what was not.

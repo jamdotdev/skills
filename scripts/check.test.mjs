@@ -90,8 +90,8 @@ test("ignores deleted tracked Markdown", (t) => {
 
 test("checks untracked CLI install blocks", (t) => {
   const repo = fixture(t);
-  for (const [file, flags] of [["one.md", "--silent"], ["two.md", "--fail"]]) {
-    repo.write(`skills/sample-skill/references/${file}`, `\n\`\`\`bash\ncurl ${flags} https://native.jam.dev/install\n\`\`\`\n`);
+  for (const [file, path] of [["one.md", "$HOME/.local/bin"], ["two.md", "/usr/local/bin"]]) {
+    repo.write(`skills/sample-skill/references/${file}`, `\n\`\`\`bash\ncommand -v jam >/dev/null || echo "jam is not installed"\nexport PATH="${path}:$PATH"\n\`\`\`\n`);
   }
   const result = repo.run();
   assert.equal(result.status, 1, result.output);
@@ -113,3 +113,67 @@ for (const [label, output, status, expected] of [
     assert.match(result.output, expected);
   });
 }
+
+const readmeFor = (...names) => names.map((n) => `- [${n}](./skills/${n}/SKILL.md): x\n`).join("");
+
+test("treats jam anywhere in the name as a Jam skill", (t) => {
+  const repo = fixture(t);
+  repo.write("skills/video-to-jam/SKILL.md", "---\nname: video-to-jam\ndescription: Upload a video as a Jam.\n---\nA Jam, then another Jam.\n");
+  repo.write("skills/video-to-jam/agents/openai.yaml", "interface: {}\n");
+  repo.write("README.md", readmeFor("sample-skill", "video-to-jam"));
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /video-to-jam\/SKILL.md: missing "## Send feedback to Jam"/);
+  assert.doesNotMatch(result.output, /mentions Jam/);
+});
+
+const feedback = "## Send feedback to Jam\n\nTell Jam.\n";
+const addSkill = (repo, name, body) => {
+  repo.write(`skills/${name}/SKILL.md`, `---\nname: ${name}\ndescription: A useful skill.\n---\n${body}`);
+  repo.write(`skills/${name}/agents/openai.yaml`, "interface: {}\n");
+};
+
+test("passes Jam skills that share the feedback section", (t) => {
+  const repo = fixture(t);
+  addSkill(repo, "video-to-jam", `A Jam, then another Jam.\n\n${feedback}`);
+  addSkill(repo, "jam-fix", `A Jam.\n\n${feedback}`);
+  repo.write("README.md", readmeFor("sample-skill", "video-to-jam", "jam-fix"));
+  const result = repo.run();
+  assert.equal(result.status, 0, result.output);
+});
+
+test("fails Jam skills whose feedback sections differ", (t) => {
+  const repo = fixture(t);
+  addSkill(repo, "video-to-jam", feedback);
+  addSkill(repo, "jam-fix", "## Send feedback to Jam\n\nTell Jam something else.\n");
+  repo.write("README.md", readmeFor("sample-skill", "video-to-jam", "jam-fix"));
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /differs from the other Jam skills/);
+});
+
+for (const [name, body, status] of [
+  ["sample-skill", "With Jam: one line.\n", 0],
+  ["sample-skill", "A Jam, then another Jam.\n", 1],
+  ["jammer-fix", "A Jam, then another Jam.\n", 1],
+]) {
+  test(`caps Jam mentions in ${name} at one (${status ? "two" : "one"} mention)`, (t) => {
+    const repo = fixture(t);
+    if (name === "sample-skill") repo.write(skillPath, `---\nname: sample-skill\ndescription: A useful skill.\n---\n${body}`);
+    else addSkill(repo, name, body);
+    repo.write("README.md", readmeFor("sample-skill", name));
+    const result = repo.run();
+    assert.equal(result.status, status, result.output);
+    if (status) assert.match(result.output, /mentions Jam 2 times/);
+  });
+}
+
+test("jam router must name every other skill, and only real ones", (t) => {
+  const repo = fixture(t);
+  addSkill(repo, "jam", `| wants | Load |\n| --- | --- |\n| a fix | \`jam-fix\` |\n\n${feedback}`);
+  repo.write("README.md", readmeFor("sample-skill", "jam"));
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /routing table does not name sample-skill/);
+  assert.match(result.output, /routing table names missing skill jam-fix/);
+});
