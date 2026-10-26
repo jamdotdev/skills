@@ -7,7 +7,7 @@
 <h1 align="center">Jam skills</h1>
 
 <p align="center">
-  Skills that make coding agents show their work: read a Jam, prove a change, point at the problem, test a flow.
+  Your agent sees what you saw, and shows you what it did.
 </p>
 
 <p align="center">
@@ -21,9 +21,16 @@
 npx skills add jamdotdev/skills
 ```
 
-Works with Claude Code, Cursor, Codex, GitHub Copilot, Gemini CLI, OpenCode and [every agent skills.sh supports](https://skills.sh). Add `--skill jam-fix` to install one skill.
+Then paste a Jam link and say what you want:
 
-A Jam is a recording of what happened on screen, with the console logs, network requests and user actions attached, on one link. A bug report, a demo, a walkthrough of a flow. These skills teach your agent to read one, and to make one.
+- "fix this https://jam.dev/c/…"
+- "do what I said in this jam"
+- "make a ticket for this jam"
+- "record a jam showing it works"
+
+A Jam is a screen recording with the console logs, network requests and user actions already attached, on one link. Bug reports, feedback walkthroughs and demos already live there. These skills let your agent read them, and record its own Jam when it's done, so you check the result by watching it.
+
+Works with Claude Code, Cursor, Codex, GitHub Copilot, Gemini CLI, OpenCode and [every agent skills.sh supports](https://skills.sh). Add `--skill jam-fix` to install one skill.
 
 ## Skills
 
