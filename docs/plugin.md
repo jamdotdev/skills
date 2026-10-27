@@ -41,7 +41,7 @@ Each token works in one workspace, belongs to your account, and expires after se
 The full, current tool list is at [jam.dev/mcp](https://jam.dev/mcp); each tool also describes itself to your agent.
 
 - **Read:** a Jam's details, console logs, network requests, user events, screenshots, video frames, transcript, chapters and custom metadata. Search Jams across your workspace.
-- **Write:** comments and reactions, folders, Jam titles and descriptions, Recording Links, and feedback to the Jam team.
+- **Write:** comments and reactions, folders, Jam titles and descriptions, resources (links to a pull request, CI run or doc) and relations between Jams, Recording Links, and feedback to the Jam team.
 - **Delete, for good:** `deleteJam`, `deleteComment` and `deleteFolder`. Jam has no trash, so nobody in your workspace can bring the data back. The bundled Cursor rule tells the agent to ask you first; other agents ask before tools the server marks as destructive.
 
 A Recording Link captures console and network logs only when it starts on a verified connected domain.
@@ -49,7 +49,7 @@ A Recording Link captures console and network logs only when it starts on a veri
 ## Privacy and permissions
 
 - The plugin connects only to `https://mcp.jam.dev/mcp`.
-- The OAuth scopes are `mcp:read` and `mcp:write`. Every tool that reads a Jam or the workspace needs `mcp:read`. Tools that change something need `mcp:write`: comments, reactions, folders, `updateJam`, the Recording Link tools that make changes, and the three `delete*` tools. The one exception is `submitFeedback`: it writes only to Jam's own feedback store, so it needs `mcp:read`.
+- The OAuth scopes are `mcp:read` and `mcp:write`. Every tool that reads a Jam or the workspace needs `mcp:read`. Tools that change something need `mcp:write`: comments, reactions, folders, `updateJam`, resources and relations, the Recording Link tools that make changes, and the three `delete*` tools. The one exception is `submitFeedback`: it writes only to Jam's own feedback store, so it needs `mcp:read`.
 - The server also checks your permissions for each workspace and each Jam on every call.
 - Every request sees only the Jams your account can already see.
 - `createFolder` and `createRecordingLink` can upgrade you from Viewer to Creator when your workspace allows it. That can change seat billing and sends an email to workspace Admins. `createRecordingLink` also sends a webhook event to your workspace's webhook subscribers.

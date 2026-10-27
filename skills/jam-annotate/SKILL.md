@@ -158,7 +158,11 @@ notes never take a number.
    the PNG. If a chip or badge covers text the claim depends on, fix the
    payload, create the Jam again, and share only the new link. Ask the human
    before you delete the first Jam, because a deleted Jam cannot come back.
-3. Return the link with the claim it supports. Post it on a PR or ticket
+3. Link it. Attach the pull request or ticket the screenshot belongs to:
+   `jam update jam <id> --resource <url>`. For one Jam per UI state, join
+   them with `jam update jam <id> --mark-related <other jam>`. Never attach a
+   URL that carries a token: the share page can be public.
+4. Return the link with the claim it supports. Post it on a PR or ticket
    only when the user requested that destination.
 
 ## Send feedback to Jam

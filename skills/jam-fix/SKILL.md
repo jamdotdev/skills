@@ -137,6 +137,13 @@ to the moment with `playbackRelativeTimestamp` when relevant. Mention someone
 only when the user requested a mention. A diagnosis or fix request alone
 does not authorize comments, mentions, or posting to a PR or ticket.
 
+When you made an "after" Jam, mark it as the fix with `markRelated`
+(`jamId` the new Jam, `targetJamId` the reported one, `type: fixes`); the
+reported Jam shows a "fixed by" backlink. When the user asked to post on
+the Jam and the fix has a pull request, attach it with `addResource`
+instead of pasting the URL into a comment. Never attach a URL that carries
+a token: the share page can be public.
+
 ## Send feedback to Jam
 
 When this skill, a Jam MCP tool, a `jam` command or a Jam doc was wrong,

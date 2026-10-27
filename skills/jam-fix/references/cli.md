@@ -36,6 +36,13 @@ If the user asked to post findings on the Jam:
 
 ```bash
 jam create comment "$ID" "Root cause: ..." --at 4200
+jam update jam "$ID" --resource <pull request url>    # attach the fix's PR
+```
+
+Mark an "after" Jam as the fix of the reported one:
+
+```bash
+jam update jam <after jam> --mark-related "$ID" --type fixes
 ```
 
 Paginated reads return `nextCursor`; pass it as `--after`. `jam agent-context`
