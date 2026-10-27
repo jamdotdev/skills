@@ -137,12 +137,15 @@ link opens from it.
 
 ## After
 
-Return each ticket's link and title. If the user asked, comment on the Jam
-with the ticket link:
+Return each ticket's link and title. If the user asked to link the Jam back,
+attach the ticket to it as a resource (`addResource` over MCP), so the Jam's
+page shows where it was filed:
 
 ```bash
-jam create comment "$ID" "Filed as ENG-412: <link>" --at 6700
+jam update jam "$ID" --resource <ticket url>
 ```
+
+The Jam's page can be public: never attach a URL that carries a token.
 
 ## Send feedback to Jam
 

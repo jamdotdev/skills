@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- `jam-proof`, `jam-fix`, `jam-to-e2e` and `jam-annotate` link the Jams they make: attach the pull request, ticket or CI run as a resource, and mark a proof Jam as `fixes` or `proves` of the bug Jam, so the bug Jam shows the backlink. Uses `jam update jam --resource` and `--mark-related` (CLI 1.32.0) or the `addResource` and `markRelated` MCP tools.
+- `jam-proof`, `jam-fix`, `jam-to-e2e`, `jam-annotate` and `jam-proof-table` link the Jams they make: attach the pull request, ticket or CI run as a resource, and mark a proof Jam as `fixes` or `proves` of the bug Jam, so the bug Jam shows the backlink. `jam-to-ticket` attaches the filed ticket to the Jam as a resource instead of commenting with its link. Uses `jam update jam --resource` and `--mark-related` (CLI 1.32.0) or the `addResource` and `markRelated` MCP tools.
 - `jam`, `jam-to-tasks`, `jam-to-ticket` and `jam-proof-table` handle screenshot, replay and silent Jams, and Jams that raise several problems: the router reads the transcript and a silent Jam's description, a task cites its field when there is no timestamp, a screenshot counts as proof, and an existing ticket covers only its own problem.
 - The README groups the skills by what you hand the agent and what you get back, with one plain line each, and lists the requirements one per line. It follows Jam's docs writing rules: no semicolons, and bold only for UI labels.
 - Added `jam`: type `/jam` and what you want, and it routes to the matching Jam skill. It also catches a bare jam.dev link or a vague ask, reads the Jam, and routes by what it holds; a clear ask still goes straight to its own skill.

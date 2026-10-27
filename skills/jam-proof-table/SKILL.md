@@ -117,12 +117,16 @@ Under the table, one line per row that is not "works", saying why.
 
 ## After
 
-If the user asked, comment on each original Jam with the link to its fix
-check:
+Mark each fix check as the fix of its original Jam (`markRelated` over
+MCP), so the original shows a "fixed by" backlink:
 
 ```bash
-jam create comment "$ORIGINAL_ID" "Fix check: https://jam.dev/c/<id>"
+jam update jam <fix check id> --mark-related "$ORIGINAL_ID" --type fixes
 ```
+
+Use `--type proves` for a Jam that shows a claim rather than a fix. If the
+user asked, also comment on each original Jam with the link to its fix
+check.
 
 Post the table in chat. Post it to a pull request or ticket only when the
 user asks.
