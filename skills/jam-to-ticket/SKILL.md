@@ -137,8 +137,9 @@ link opens from it.
 
 ## After
 
-Return each ticket's link and title, then offer to post it on the Jam: one
-comment with the ticket link. Post on a yes, or right away when the user
+Return each ticket's link and title. When you filed a new ticket, offer to
+post it on the Jam: one comment with the ticket link. Skip the offer when
+the Jam was already ticketed. Post on a yes, or right away when the user
 already asked:
 
 ```bash

@@ -148,8 +148,9 @@ the totals: "11 asks: 9 done, 1 deferred, 1 needs an answer."
 
 ## After
 
-Offer one comment on the Jam with the outcomes, pinned to the first ask.
-Post on a yes, or right away when the user already asked. When the work
+When tasks were done or deferred, offer one comment on the Jam with the
+outcomes, pinned to the first ask. Skip the offer when the user only wanted
+the list. Post on a yes, or right away when the user already asked. When the work
 landed in a pull request, attach it with that yes: `jam update jam "$ID"
 --resource <url>` (`addResource` over MCP).
 

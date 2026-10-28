@@ -131,10 +131,11 @@ For approved proof uploads from a coding agent, use
 
 ## After
 
-Return the diagnosis and any fix in chat, then offer to post it on the Jam:
-one `createComment` with what you found or changed, pinned to the moment
-with `playbackRelativeTimestamp` when relevant. Post on a yes, or right away
-when the user already asked. Mention someone only when the user requested a
+Return the diagnosis and any fix in chat. When you found the cause or
+changed code, offer to post it on the Jam: one `createComment` with what you
+found or changed, pinned to the moment with `playbackRelativeTimestamp` when
+relevant. Skip the offer for an inconclusive diagnosis. Post on a yes, or
+right away when the user already asked. Mention someone only when the user requested a
 mention. A diagnosis or fix request alone does not authorize comments,
 mentions, or posting to a PR or ticket.
 

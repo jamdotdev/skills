@@ -159,8 +159,10 @@ so. Link the new Jam to the source Jam when the run passed: `jam update jam
 proves` for a flow (`markRelated` over MCP). With a pull request, attach it
 with `--resource <url>` (`addResource`). Return the URL.
 
-Offer one comment on the source Jam with the test's path and what it guards.
-Post on a yes, or right away when the user already asked. Post to a PR or
+Once the test is committed or in a pull request, offer one comment on the
+source Jam with the test's path and what it guards. Skip the offer for a
+test that stays local. Post on a yes, or right away when the user already
+asked. Post to a PR or
 ticket only when the user requested that destination.
 
 ## Send feedback to Jam

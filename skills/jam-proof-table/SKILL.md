@@ -117,8 +117,9 @@ Under the table, one line per row that is not "works", saying why.
 
 ## After
 
-Offer one comment on each original Jam with its row's status and the link
-to its fix check:
+Offer one comment on each original Jam whose row settles something (works
+or broken), with the status and the link to its fix check. Skip unconfirmed
+and not-recorded rows:
 
 ```bash
 jam create comment "$ORIGINAL_ID" "Fix check: works. https://jam.dev/c/<id>"

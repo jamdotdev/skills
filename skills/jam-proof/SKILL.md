@@ -196,10 +196,11 @@ Skip the first when there is no meaningful before and say why.
    several Jams of one flow or for a fix the recording does not settle. Over
    MCP these are `addResource` and `markRelated`. The share page can be
    public: never attach a URL that carries a token.
-3. Offer a comment. On the new Jam, one at the moment the result appears:
-   `jam create comment <jamId> "<what to look at>" --at <ms>`. With a bug
-   Jam, also offer one there that says what changed, with the fix Jam's
-   link. Post on a yes, or right away when the user already asked.
+3. Offer a comment where it tells a viewer something the video does not.
+   On the new Jam, one at the moment the result appears: `jam create comment
+   <jamId> "<what to look at>" --at <ms>`. With a bug Jam, one there when
+   the fix is shown working or the check failed, with the new Jam's link.
+   Post on a yes, or right away when the user already asked.
 4. Return the links: Bug | Fix, or one link with the claim it supports. Post
    them on a PR or ticket only when the user requested that destination.
 
