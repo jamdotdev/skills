@@ -131,18 +131,22 @@ For approved proof uploads from a coding agent, use
 
 ## After
 
-Return the diagnosis and any fix in chat. If the user asked to post findings
-on the Jam, use `createComment` once with what you found or changed. Pin it
-to the moment with `playbackRelativeTimestamp` when relevant. Mention someone
-only when the user requested a mention. A diagnosis or fix request alone
-does not authorize comments, mentions, or posting to a PR or ticket.
+Return the diagnosis and any fix in chat, then offer to post it on the Jam:
+one `createComment` with what you found or changed, pinned to the moment
+with `playbackRelativeTimestamp` when relevant. Post on a yes, or right away
+when the user already asked. Mention someone only when the user requested a
+mention. A diagnosis or fix request alone does not authorize comments,
+mentions, or posting to a PR or ticket.
 
-When you made an "after" Jam, mark it as the fix with `markRelated`
-(`jamId` the new Jam, `targetJamId` the reported one, `type: fixes`); the
-reported Jam shows a "fixed by" backlink. When the user asked to post on
-the Jam and the fix has a pull request, attach it with `addResource`
-instead of pasting the URL into a comment. Never attach a URL that carries
-a token: the share page can be public.
+Link when there is something to link:
+
+- An "after" Jam that shows the fix working: mark it with `markRelated`
+  (`jamId` the new Jam, `targetJamId` the reported one, `type: fixes`). The
+  reported Jam shows a "fixed by" backlink.
+- A pull request for the fix, once the user said yes to posting on the Jam:
+  attach it with `addResource`.
+
+Never attach a URL that carries a token: the share page can be public.
 
 ## Send feedback to Jam
 

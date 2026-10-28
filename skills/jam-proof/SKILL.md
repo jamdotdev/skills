@@ -187,18 +187,19 @@ Skip the first when there is no meaningful before and say why.
    `height` and the recorded `target` when `jam record` did the capturing.
    If the capture or upload failed, say so. Never claim proof you do not
    have.
-2. Link the new Jam to what it proves. Attach the pull request, ticket or CI
-   run: `jam update jam <jamId> --resource <url>`, with `--label "<name>"`
-   when the URL does not say what it is. For a fix, mark it against the bug
-   Jam: `jam update jam <jamId> --mark-related <bug jam> --type fixes`. Use
-   `proves` for a demo of a claim, and `relates_to` to join several Jams of
-   one flow. The bug Jam then shows a "fixed by" backlink, so there is no
-   need to paste URLs into comments. Over MCP these are `addResource` and
-   `markRelated`. The share page can be public: never attach a URL that
-   carries a token.
-3. If the user asked for a Jam comment, add one at the moment the result appears:
-   `jam create comment <jamId> "<what to look at>" --at <ms>`. Comment on the
-   original bug Jam only if the user requested it too.
+2. Link it when there is something to link. With a pull request, ticket or
+   CI run, attach it: `jam update jam <jamId> --resource <url>`, with
+   `--label "<name>"` when the URL does not say what it is. With a bug Jam
+   and a fix the recording shows working, mark it: `jam update jam <jamId>
+   --mark-related <bug jam> --type fixes`, and the bug Jam shows a "fixed
+   by" backlink. Use `proves` for a demo of a claim, and `relates_to` to join
+   several Jams of one flow or for a fix the recording does not settle. Over
+   MCP these are `addResource` and `markRelated`. The share page can be
+   public: never attach a URL that carries a token.
+3. Offer a comment. On the new Jam, one at the moment the result appears:
+   `jam create comment <jamId> "<what to look at>" --at <ms>`. With a bug
+   Jam, also offer one there that says what changed, with the fix Jam's
+   link. Post on a yes, or right away when the user already asked.
 4. Return the links: Bug | Fix, or one link with the claim it supports. Post
    them on a PR or ticket only when the user requested that destination.
 

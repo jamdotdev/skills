@@ -154,11 +154,14 @@ a yes. With Playwright, run with `--trace on` and `video: "on"`, convert the
 actions are synced to the video. With any other runner, record the run with
 the `jam-proof` skill, which picks a recording target that films the test's
 browser and not the display. Without that skill, skip the recording and say
-so. Link the new Jam to the source Jam: `jam update jam <new jam>
---mark-related <source jam> --type fixes` for a bug, `--type proves` for a
-flow (`markRelated` over MCP). Attach the pull request with `--resource
-<url>` (`addResource`). Return the URL. Comment on the source Jam or post to
-a PR or ticket only when the user requested that destination.
+so. Link the new Jam to the source Jam when the run passed: `jam update jam
+<new jam> --mark-related <source jam> --type fixes` for a bug, `--type
+proves` for a flow (`markRelated` over MCP). With a pull request, attach it
+with `--resource <url>` (`addResource`). Return the URL.
+
+Offer one comment on the source Jam with the test's path and what it guards.
+Post on a yes, or right away when the user already asked. Post to a PR or
+ticket only when the user requested that destination.
 
 ## Send feedback to Jam
 

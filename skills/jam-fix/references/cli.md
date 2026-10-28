@@ -32,7 +32,7 @@ jam get metadata "$ID" --json                   # 6. app context
 For an unexpected successful response, remove the status filter and use
 `jam get network "$ID" --bodies all --json`.
 
-If the user asked to post findings on the Jam:
+Once the user says yes to posting findings on the Jam:
 
 ```bash
 jam create comment "$ID" "Root cause: ..." --at 4200
