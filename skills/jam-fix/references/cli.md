@@ -32,10 +32,17 @@ jam get metadata "$ID" --json                   # 6. app context
 For an unexpected successful response, remove the status filter and use
 `jam get network "$ID" --bodies all --json`.
 
-If the user asked to post findings on the Jam:
+Once the user says yes to posting findings on the Jam:
 
 ```bash
 jam create comment "$ID" "Root cause: ..." --at 4200
+jam update jam "$ID" --resource <pull request url>    # attach the fix's PR
+```
+
+Mark an "after" Jam as the fix of the reported one:
+
+```bash
+jam update jam <after jam> --mark-related "$ID" --type fixes
 ```
 
 Paginated reads return `nextCursor`; pass it as `--after`. `jam agent-context`

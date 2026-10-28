@@ -137,12 +137,23 @@ link opens from it.
 
 ## After
 
-Return each ticket's link and title. If the user asked, comment on the Jam
-with the ticket link:
+Return each ticket's link and title. When you filed a new ticket, offer to
+post it on the Jam: one comment with the ticket link. Skip the offer when
+the Jam was already ticketed. Post on a yes, or right away when the user
+already asked:
 
 ```bash
 jam create comment "$ID" "Filed as ENG-412: <link>" --at 6700
 ```
+
+With that yes, also attach the ticket as a resource (`addResource` over
+MCP), so the Jam's page shows where it was filed:
+
+```bash
+jam update jam "$ID" --resource <ticket url>
+```
+
+The Jam's page can be public: never attach a URL that carries a token.
 
 ## Send feedback to Jam
 

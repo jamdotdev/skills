@@ -148,8 +148,11 @@ the totals: "11 asks: 9 done, 1 deferred, 1 needs an answer."
 
 ## After
 
-If the user asked, post one comment on the Jam with the outcomes, pinned to
-the first ask:
+When tasks were done or deferred, offer one comment on the Jam with the
+outcomes, pinned to the first ask. Skip the offer when the user only wanted
+the list. Post on a yes, or right away when the user already asked. When the work
+landed in a pull request, attach it with that yes: `jam update jam "$ID"
+--resource <url>` (`addResource` over MCP).
 
 Use the `createComment` MCP tool, or write the body to a file and pass it
 with `"$(cat ...)"`. Quotes from the transcript often hold `$` or
