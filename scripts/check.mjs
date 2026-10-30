@@ -57,7 +57,9 @@ for (const dir of skillDirs) {
     if (!feedback) fail(`${skillPath}: missing "## Send feedback to Jam" section; copy it from another Jam skill`);
     else if ((feedbackSection ??= feedback) !== feedback) fail(`${skillPath}: "## Send feedback to Jam" differs from the other Jam skills`);
   } else {
-    const mentions = src.slice(fm[0].length).match(/\bjam\b/gi)?.length ?? 0;
+    // Count prose only: `jam create jam` in a "With Jam" line is one mention, not three.
+    const prose = src.slice(fm[0].length).replace(/```[\s\S]*?```|`[^`\n]*`/g, "");
+    const mentions = prose.match(/\bjam\b/gi)?.length ?? 0;
     if (mentions > 1) fail(`${skillPath}: mentions Jam ${mentions} times; skills without jam in their name may mention it once`);
   }
 }

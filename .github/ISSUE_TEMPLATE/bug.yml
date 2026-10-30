@@ -6,7 +6,7 @@ body:
     id: skill
     attributes:
       label: Skill
-      options: [jam-fix, jam-proof, jam-annotate, jam-to-e2e, plugin or MCP setup, other]
+      options: [jam-fix, jam-proof, jam-annotate, jam-to-e2e, record-demo, record-terminal-proof, add-voiceover, plugin or MCP setup, other]
     validations:
       required: true
   - type: input
