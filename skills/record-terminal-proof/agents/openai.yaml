@@ -1,0 +1,4 @@
+interface:
+  display_name: "Record Terminal Proof"
+  short_description: "Record a terminal run as a GIF for the pull request"
+  default_prompt: "Use $record-terminal-proof to record this command and attach the GIF to the PR."

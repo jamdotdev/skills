@@ -1,0 +1,18 @@
+[
+  {"shot": "wide",
+   "do": [["say", "This is TodoMVC. Let's add the first thing to do."],
+          ["click", ".new-todo", "--human"], ["humantype", ".new-todo", "Buy oat milk"], ["press", "Enter"]]},
+  {"shot": ".todoapp",
+   "do": [["say", "Every item lands in the list the moment you press Enter."],
+          ["humantype", ".new-todo", "Book flights to Lisbon"], ["press", "Enter"],
+          ["humantype", ".new-todo", "Ship the walkthrough skill"], ["press", "Enter"]]},
+  {"do": [["say", "Done with one? Tick its checkbox."],
+          ["click", ".todo-list li:nth-child(1) .toggle", "--human"]]},
+  {"do": [["say", "Filters split what's still active"],
+          ["click", "a[href='#/active']", "--human"], ["wait", "900"],
+          ["say", "from what's finished."],
+          ["click", "a[href='#/completed']", "--human"], ["wait", "900"], ["click", "a[href='#/']", "--human"]]},
+  {"shot": "wide",
+   "do": [["say", "And Clear completed removes everything you've finished."],
+          ["click", ".clear-completed", "--human"]]}
+]
