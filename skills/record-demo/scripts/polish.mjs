@@ -113,7 +113,7 @@ const cuts = []; // the camera moves only where the shot changes, starting with 
 let here = WIDE;
 tl.beats.forEach((b, i) => {
   const there = view(b, i + 1);
-  if (Math.max(...here.map((a, k) => Math.abs(a - there[k]))) > 1) {
+  if (Math.hypot(here[0] - there[0], here[1] - there[1]) > 1 || Math.abs(Math.log(here[2] / there[2])) > 0.01) { // pixels and zoom apart
     cuts.push([b.said - 0.15, here, there, moveTime(here, there)]);
     here = there;
   }
@@ -175,7 +175,9 @@ const frameAt = (t) => {
 };
 
 const AGENT = tool("agent-browser");
-const ab = (...a) => execFileSync(AGENT, ["--session", "polish", ...a], { encoding: "utf8", shell: /\.(cmd|bat)$/i.test(AGENT) });
+const shim = /\.(cmd|bat)$/i.test(AGENT), q = (x) => `"${x.replaceAll('"', '""')}"`; // a Windows .cmd shim only runs through the shell, quoted
+const ab = (...a) => (shim ? execFileSync(q(AGENT), ["--session", "polish", ...a].map(q), { encoding: "utf8", shell: true })
+                           : execFileSync(AGENT, ["--session", "polish", ...a], { encoding: "utf8" }));
 ab("open", "about:blank");
 ab("set", "viewport", String(W), String(H));
 ab("open", pathToFileURL(join(import.meta.dirname, "polish.html")).href);
@@ -218,7 +220,7 @@ writeFileSync(join(out, "poster.png"), Buffer.from((await call("Page.captureScre
 enc.stdin.end();
 await new Promise((r) => enc.on("close", r));
 ws.close();
-spawnSync(AGENT, ["--session", "polish", "close"], { shell: /\.(cmd|bat)$/i.test(AGENT) });
+ab("close");
 rmSync(frames, { recursive: true });
 if (enc.exitCode !== 0) die("ffmpeg failed to encode the polished video");
 console.log(polished);

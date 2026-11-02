@@ -17,7 +17,7 @@
 //   say                 the macOS voice, for drafts
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { delimiter, join } from "node:path";
 
@@ -64,7 +64,7 @@ async function elevenlabs(text, wav, before, after) {
     body: JSON.stringify({
       text, previous_text: before, next_text: after, // neighbours keep one intonation across lines
       model_id: MODEL,
-      // v4 takes only these two; lower stability makes a voice laugh and drift between lines.
+      // Lower stability makes a voice laugh and drift between lines.
       voice_settings: { stability: 0.5, similarity_boost: 0.75, use_speaker_boost: true },
     }),
     signal: AbortSignal.timeout(120_000),
@@ -75,7 +75,7 @@ async function elevenlabs(text, wav, before, after) {
   rmSync(`${wav}.mp3`);
 }
 
-const command = (argv) => (text, wav) => run(argv[0], argv.slice(1).map((a) => (a === "{out}" ? wav : a === "{text}" ? text : a)), { input: text });
+const command = (argv) => (text, wav) => run(argv[0], argv.slice(1).map((a) => a.replaceAll("{out}", wav).replaceAll("{text}", text)), { input: text });
 
 const kokoro = join(process.env.KOKORO_DIR || join(homedir(), ".cache", "kokoro"), "voices-v1.0.bin");
 let engine, speak;
@@ -113,7 +113,9 @@ for (const [i, l] of lines.entries()) {
   const wav = join(out, `${createHash("sha1").update(pyjson(key)).digest("hex").slice(0, 10)}.wav`);
   if (!existsSync(wav)) {
     console.error(`voicing ${i + 1}/${lines.length}: ${l.say}`);
-    await speak(l.say, wav, before, after);
+    const part = wav.replace(/\.wav$/, ".part.wav"); // only a finished line is cached: an interrupted one is voiced again
+    await speak(l.say, part, before, after);
+    renameSync(part, wav);
   }
   l.wav = wav.split(/[\\/]/).pop();
   l.seconds = round(seconds(wav));

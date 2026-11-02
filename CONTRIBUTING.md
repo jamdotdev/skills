@@ -9,7 +9,7 @@ Thanks for helping. This repo holds small agent skills about Jams (screen record
 3. **No pitch.** No sales copy inside a `SKILL.md`. Jam lives in the README.
 4. **Do what agents can't, or give them structure they lack.** Visuals for humans (proof video, marked-up screenshots, diagrams) and evidence structure (claim, how it was verified, evidence, gaps). Not things agents already do well, such as reading a HAR file.
 5. **Claim only what ships.** Every command, flag and tool a skill names must exist in the released Jam CLI or MCP server today. Check with `jam agent-context` or the [MCP docs](https://jam.dev/mcp).
-6. **Use the project's tools.** A skill uses the project's existing test runner, browser driver or setup, and falls back to Playwright when there is none.
+6. **Use the project's tools.** A skill uses the project's existing test runner, browser driver or setup, and falls back to Playwright when there is none. `record-demo` is the exception: its player needs agent-browser's 3x screencast and timed pointer, which a test runner doesn't give.
 
 ## Anatomy of a skill
 

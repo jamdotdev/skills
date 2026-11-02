@@ -31,12 +31,12 @@ step npm run migrate
 step npm test -- users.spec.ts
 ```
 
-`set -e` stops the recording at the first failing step, so the proof cannot show success after a failure. Keep secrets out of the output: no `env`, no tokens in arguments.
+`set -e` stops the recording at the first failing step, so the proof cannot show success after a failure, and `--return` (below) makes `asciinema` exit with the script's status: stop and report when it is not 0. Keep secrets out of the output: no `env`, no tokens in arguments.
 
 ## Record
 
 ```bash
-asciinema rec --quiet --overwrite --window-size 100x30 --command "./demo.sh" proof.cast
+asciinema rec --quiet --overwrite --return --window-size 100x30 --command "./demo.sh" proof.cast
 ```
 
 With no TTY (an agent's shell), asciinema switches to headless mode by itself. A 15 s script gives a cast of about 1 KB. The cast is plain JSON lines, so keep it when someone needs the exact text.

@@ -48,7 +48,7 @@ async function ab(...a) {
       : await execFileP(AGENT, argv, { maxBuffer: 1 << 26 });
     return stdout;
   } catch (e) {
-    spawnSync(AGENT, [...AB, "close"], { shell: shim });
+    spawnSync(shim ? `"${AGENT}"` : AGENT, [...AB, "close"], { shell: shim });
     die(`agent-browser ${a.join(" ")} failed: ${e.stdout ?? ""}${e.stderr ?? e.message}`);
   }
 }
@@ -155,6 +155,8 @@ async function film(shots, frames, urls, titles) {
 }
 
 const length = (text) => voiced[text] || 0.4 + text.trim().split(/\s+/).length / 2.6; // ponytail: even reading pace until the line is voiced
+if (vi >= 0) for (const b of beats) for (const c of b.do) if (c[0] === "say" && !voiced[c[1]])
+  console.error(`warning: "${c[1]}" is not in the voiced lines, so it is timed at reading pace; voice beats.json again`);
 
 const GAP = 0.6; // breath between lines
 const SETTLE = 0.5; // a person looks at what a click or key did before moving on
@@ -193,8 +195,14 @@ for (const [i, b] of beats.entries()) {
       // viewport. Filmed a step at a time, not live: each 60th of a second the page moves to its exact place and the
       // frame that shows it is stamped on the video's 60 fps grid, so the scroll is even however busy the machine
       // is. The time the steps really took is cut.
-      const [y0, d] = await on(cmd[1], `return [scrollY, Math.max(-scrollY, Math.min(el.getBoundingClientRect().top - innerHeight / 5,
-          document.scrollingElement.scrollHeight - innerHeight - scrollY))]`);
+      // It scrolls the window, or, when the page itself doesn't scroll (many app shells), the panel that holds the target.
+      const [y0, d] = await on(cmd[1], `const root = document.scrollingElement;
+          let box = root.scrollHeight > innerHeight + 1 ? root : el.parentElement;
+          while (box !== root && box && !(box.scrollHeight > box.clientHeight && /auto|scroll/.test(getComputedStyle(box).overflowY))) box = box.parentElement;
+          box = box && box !== document.body ? box : root; window.__scroller = box;
+          const top = box === root ? 0 : box.getBoundingClientRect().top;
+          return [box.scrollTop, Math.max(-box.scrollTop, Math.min(el.getBoundingClientRect().top - top - box.clientHeight / 5,
+            box.scrollHeight - box.clientHeight - box.scrollTop))];`);
       const n = Math.round((Math.min(4000, 1000 + 0.8 * Math.abs(d)) / 1000) * 60);
       grab = {}; // from here on, only stepped frames count
       const w0 = Date.now() / 1000, v = w0 - wall0 - cuts.reduce((s, [a, b]) => s + b - a, 0);
@@ -204,16 +212,17 @@ for (const [i, b] of beats.entries()) {
         const u = k / n, y = y0 + d * (u < 0.5 ? 4 * u ** 3 : 1 - (2 - 2 * u) ** 3 / 2);
         if (Math.abs(y - shown) >= 1 / SCALE) { // under a device pixel the page doesn't repaint: the last frame holds
           // The frame painted once the scroll has landed. Chrome's own scroll offset on a frame lags on small moves, so
-          // its paint time decides; a page that sends nothing new in 150 ms holds its last frame.
+          // its paint time decides. When no such frame comes within 60 ms (a scrolling panel sometimes sends none), a screenshot of the page
+          // as it is now stands in.
           grab.data = null;
-          await call("Runtime.evaluate", { expression: `scrollTo({top: ${y}, behavior: 'instant'})` }, session);
+          await call("Runtime.evaluate", { expression: `__scroller.scrollTo({top: ${y}, behavior: 'instant'})` }, session);
           const landed = Date.now() / 1000 - 0.005;
           const data = await new Promise((done) => {
             const check = () => grab.data && grab.at >= landed && done(grab.data);
             grab.seen = check;
             check();
-            setTimeout(() => done(null), 150);
-          });
+            setTimeout(() => done(null), 60);
+          }) ?? (await call("Page.captureScreenshot", { format: "jpeg", quality: 80 }, session))?.data;
           if (data) {
             path = join(shots, `${String(frames.length).padStart(6, "0")}.jpg`);
             writeFileSync(path, Buffer.from(data, "base64"));

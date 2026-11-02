@@ -13,7 +13,7 @@ Needs `agent-browser` (0.38.1 or later), `ffmpeg` and Node 22 or later, on macOS
 
 Open the page, run `agent-browser snapshot -i`, and run every action once. Pick CSS selectors that still match after earlier steps change the page; refs like `@e3` go stale.
 
-If the app needs sign-in or seed data, set that up now, in the session the player uses, launched the way it launches it: `agent-browser --session demo --args "--force-device-scale-factor=3" open <url>`. The flag renders the page at 3x for a sharp take; a session started without it keeps its 1x screen.
+If the app needs sign-in or seed data, set that up now, in the session the player uses, launched the way it launches it: `agent-browser --session demo --args "--force-device-scale-factor=3" open <url>`. The flag renders the page at 3x for a sharp take; a session started without it keeps its 1x screen. The player closes the session after each take, so for a sign-in that lasts across takes, set `AGENT_BROWSER_PROFILE` to a folder of your own, like `./demo-profile`, for this command and for every run of the player.
 
 ## 2. Write the screenplay, `beats.json`
 
@@ -45,7 +45,7 @@ The camera never follows clicks on its own. A frame that would zoom in less than
 - Write the lines with the rules in `add-voiceover`: short, spoken, one idea each, naming what the viewer should notice, not what the mouse does. Put a line just before the command it describes.
 - `do` entries are agent-browser commands. `humantype <selector> <text>` types one key at a time; plain `type` and `fill` put the whole text in one frame.
 - Use `click <sel> --human` so the pointer travels there like a hand and the press shows. A plain `click` happens with no pointer on screen.
-- `["scrollto", "<sel>"]` scrolls smoothly until the element sits a fifth of the way down the screen. Plain `scroll` jumps in one frame. Selectors are CSS, or XPath after `xpath=` to match by text: `xpath=//button[contains(., 'Save')]`.
+- `["scrollto", "<sel>"]` scrolls smoothly until the element sits a fifth of the way down the screen, in the window or in whatever panel scrolls it. End a beat with it, and frame what it reveals in the next beat: a shot is measured at its beat's start and end, so a scroll inside a framed beat widens the frame. Plain `scroll` jumps in one frame. Selectors are CSS, or XPath after `xpath=` to match by text: `xpath=//button[contains(., 'Save')]`.
 - Add `["wait", "900"]` after a change the viewer needs a moment to read. Nothing should sit still and silent for more than 3 s; `record.mjs` warns when something does, so cut the wait or give it a line. The last beat's result holds 2 s on its own.
 - Mark the beat that tells the whole story in one still with `"poster": true`, usually the payoff. Its last frame, after the result has landed and the pointer has stepped aside, becomes `poster.png`. Without a mark the last beat is used.
 - `["cut", <agent-browser command>]` runs the command and cuts its time from the video, for a wait nobody needs to watch: `["cut", "wait", "--text", "Welcome"]` skips a loading screen. After `click <sel> --human`, the press shows and the cut follows straight away. `["cut", "open", "<url>"]` moves to another page, after the line playing has finished.
@@ -80,10 +80,10 @@ Look at `poster.png` too: covered from the narration, it should still say what c
 
 Then get a fresh look. If you can start a subagent, give it only the beat frames, `poster.png` and a one-line brief of what the demo shows, never your plan or your reasons. Ask it for a ranked list: wrong state or missing result first, then framing (the frame cuts off what the line names, the pointer covers it), then pace (a pause too long, a click too fast to follow), then polish. Each finding names the frame file that shows it and the fix in one line, or it says "nothing" and lists the frames it looked at. Without a subagent, do the same pass yourself, a frame at a time.
 
-Re-record when a frame shows the wrong state or the frame cuts off what the line names; change the shot and run `polish.mjs` again when only the camera is wrong. Never edit the video to hide a failed step. Then run the checks in `add-voiceover`.
+Re-record when a frame shows the wrong state, or when a shot needs another selector: the player measures each shot while it records. Run `polish.mjs` again when only its options change, like `--frame` or `--background`. Never edit the video to hide a failed step. Then run the checks in `add-voiceover`.
 
 ## Share
 
 Attach the MP4 to the pull request (GitHub takes videos up to 10 MB on free plans) or the ticket. Where a video won't play inline, as in a Slack preview or a README, use `poster.png` as the still that links to it.
 
-**With Jam:** when `command -v jam` (`where jam` on Windows) finds the CLI, ask the user once whether to upload the video; it becomes one link to comment on, with a synced transcript of the narration and frames the next agent can read. Upload only on a yes, with `jam create jam '{"kind": "video", "url": "<url>", "videoPath": "voice/voiced.mp4", "screenDimensions": {"width": 2560, "height": 1440}}'`. Exit code 3 means signed out: run `jam auth login`, then retry.
+**With Jam:** when `command -v jam` (`where jam` on Windows) finds the CLI, ask the user once whether to upload the video; it becomes one link to comment on, with a synced transcript of the narration and frames the next agent can read. Upload only on a yes, with `jam create jam '{"kind": "video", "url": "<url>", "videoPath": "voice/voiced.mp4", "posterImagePath": "demo-out/poster.png", "screenDimensions": {"width": 2560, "height": 1440}}'`. Exit code 3 means signed out: run `jam auth login`, then retry.
