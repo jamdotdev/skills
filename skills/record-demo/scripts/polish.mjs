@@ -178,8 +178,15 @@ const AGENT = tool("agent-browser");
 const shim = /\.(cmd|bat)$/i.test(AGENT), q = (x) => `"${x.replaceAll('"', '""')}"`; // a Windows .cmd shim only runs through the shell, quoted
 const ab = (...a) => (shim ? execFileSync(q(AGENT), ["--session", "polish", ...a].map(q), { encoding: "utf8", shell: true })
                            : execFileSync(AGENT, ["--session", "polish", ...a], { encoding: "utf8" }));
-// However polish ends, Ctrl-C included, its Chrome closes; a session already gone is fine.
-process.on("exit", () => { try { ab("close"); } catch {} });
+// However polish ends, Ctrl-C or a timeout included, its Chrome closes, and a run that didn't finish leaves no
+// cut-short polished.mp4 that looks complete, and no frames.
+let finished = false;
+process.on("exit", () => {
+  try { ab("close"); } catch {} // a session already gone is fine
+  if (finished) return;
+  enc?.kill();
+  for (const p of [join(out, "polished.mp4"), frames]) try { rmSync(p, { recursive: true, force: true }); } catch {}
+});
 for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => process.exit(130));
 let enc, closed; // the encoder, and its exit, watched from the start so an early one is never missed
 ab("open", "about:blank");
@@ -200,9 +207,8 @@ async function run(expression) {
   const r = await call("Runtime.evaluate", { expression, awaitPromise: true }, session);
   if (r.exceptionDetails) {
     const why = `polish.html: ${r.exceptionDetails.exception?.description ?? r.exceptionDetails.text}`;
-    enc?.kill(); // let go of polished.mp4 (Windows won't delete an open file), so a cut-short video isn't left looking finished
+    enc?.kill(); // let go of polished.mp4 first: Windows won't delete an open file
     await closed;
-    try { rmSync(join(out, "polished.mp4"), { force: true }); } catch {}
     die(why);
   }
 }
@@ -218,7 +224,7 @@ enc.stdin.on("error", () => {}); // ffmpeg gone: its exit code below says so
 const total = Math.floor(duration * FPS);
 console.error(`filming ${total} frames`);
 for (let n = 0; n < total; n++) {
-  if (enc.exitCode !== null) break; // ffmpeg stopped: the exit-code check below reports it
+  if (enc.exitCode !== null || enc.signalCode !== null) break; // ffmpeg stopped: the exit-code check below reports it
   const t = n / FPS;
   await run(`draw(${JSON.stringify(frameState(t, frameAt(t)))})`);
   const { data } = await call("Page.captureScreenshot", { format: "jpeg", quality: 95, optimizeForSpeed: true }, session);
@@ -235,4 +241,5 @@ await closed;
 ws.close();
 rmSync(frames, { recursive: true });
 if (enc.exitCode !== 0) die("ffmpeg failed to encode the polished video");
+finished = true;
 console.log(polished);
