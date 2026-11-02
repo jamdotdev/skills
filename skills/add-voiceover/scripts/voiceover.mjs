@@ -81,7 +81,8 @@ const kokoro = join(process.env.KOKORO_DIR || join(homedir(), ".cache", "kokoro"
 let engine, speak;
 if (process.env.VOICEOVER_TTS) {
   engine = ["custom", process.env.VOICEOVER_TTS];
-  speak = command(process.env.VOICEOVER_TTS.match(/"[^"]*"|'[^']*'|\S+/g).map((a) => a.replace(/^(["'])(.*)\1$/, "$2")));
+  // Shell-style words: quotes group, even mid-word, so --voice="Jane Doe" stays one argument.
+  speak = command(process.env.VOICEOVER_TTS.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g).map((a) => a.replace(/"([^"]*)"|'([^']*)'/g, "$1$2")));
 } else if (process.env.ELEVENLABS_API_KEY) {
   engine = ["elevenlabs", VOICE, MODEL];
   speak = elevenlabs;
@@ -101,15 +102,18 @@ const seconds = (path) => parseFloat(run(FFPROBE, ["-v", "error", "-show_entries
 const round = (x) => Math.round(x * 1000) / 1000;
 
 // The cache key is Python's json.dumps of [engine, line], so lines voiced by the earlier Python script are reused.
+// ElevenLabs hears the lines around each one too, so for it they are part of the key: editing a line re-voices its neighbours.
 const pyjson = (v) => (Array.isArray(v) ? `[${v.map(pyjson).join(", ")}]`
   : JSON.stringify(v).replace(/[\u0080-￿]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`));
 
 const said = lines.map((l) => l.say);
 for (const [i, l] of lines.entries()) {
-  const wav = join(out, `${createHash("sha1").update(pyjson([engine, l.say])).digest("hex").slice(0, 10)}.wav`);
+  const before = said.slice(Math.max(0, i - 2), i).join(" "), after = said.slice(i + 1, i + 3).join(" ");
+  const key = engine[0] === "elevenlabs" ? [engine, l.say, before, after] : [engine, l.say];
+  const wav = join(out, `${createHash("sha1").update(pyjson(key)).digest("hex").slice(0, 10)}.wav`);
   if (!existsSync(wav)) {
     console.error(`voicing ${i + 1}/${lines.length}: ${l.say}`);
-    await speak(l.say, wav, said.slice(Math.max(0, i - 2), i).join(" "), said.slice(i + 1, i + 3).join(" "));
+    await speak(l.say, wav, before, after);
   }
   l.wav = wav.split(/[\\/]/).pop();
   l.seconds = round(seconds(wav));
@@ -140,7 +144,10 @@ if (video) {
   // One gain for the whole track, peaks at -1 dB. loudnorm and other dynamic levelers pump up each word's tail into an echo.
   const peak = run(FFMPEG, ["-i", narration, "-af", "volumedetect", "-f", "null", "-"], { ok: true }).stderr;
   const gain = -1 - parseFloat(peak.split("max_volume:")[1]);
-  run(FFMPEG, ["-v", "error", "-y", "-i", video, "-i", narration, "-filter_complex", `[1:a]volume=${gain.toFixed(2)}dB,apad[aout]`,
+  // A video with its own sound keeps it, at its own level, under the narration.
+  const sound = run(FFPROBE, ["-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=p=0", video]).stdout.trim();
+  const voice = `[1:a]volume=${gain.toFixed(2)}dB,apad${sound ? "[n];[0:a][n]amix=inputs=2:normalize=0:duration=first" : ""}[aout]`;
+  run(FFMPEG, ["-v", "error", "-y", "-i", video, "-i", narration, "-filter_complex", voice,
                "-map", "0:v", "-map", "[aout]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest",
                "-movflags", "faststart", join(out, "voiced.mp4")]);
   console.log(join(out, "voiced.mp4"));
