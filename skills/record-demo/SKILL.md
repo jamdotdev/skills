@@ -76,7 +76,7 @@ Read what `polish.mjs` printed: the number of camera moves should match the shot
 ffmpeg -v error -ss <said + 1.5> -i voice/voiced.mp4 -frames:v 1 beat.png
 ```
 
-Look at `poster.png` too: covered from the narration, it should still say what changed. If it doesn't, move `"poster"` to another beat and run `polish.mjs` again.
+Look at `poster.png` too: covered from the narration, it should still say what changed. If it doesn't, move `"poster": true` to another beat in `demo-out/timeline.json` (polish reads that file, not `beats.json`) and run `polish.mjs` again.
 
 Then get a fresh look. If you can start a subagent, give it only the beat frames, `poster.png` and a one-line brief of what the demo shows, never your plan or your reasons. Ask it for a ranked list: wrong state or missing result first, then framing (the frame cuts off what the line names, the pointer covers it), then pace (a pause too long, a click too fast to follow), then polish. Each finding names the frame file that shows it and the fix in one line, or it says "nothing" and lists the frames it looked at. Without a subagent, do the same pass yourself, a frame at a time.
 

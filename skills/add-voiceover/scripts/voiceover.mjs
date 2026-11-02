@@ -148,7 +148,13 @@ if (video) {
   const gain = -1 - parseFloat(peak.split("max_volume:")[1]);
   // A video with its own sound keeps it, at its own level, under the narration, to the video's end however short it is.
   const sound = run(FFPROBE, ["-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=p=0", video]).stdout.trim();
-  const voice = `[1:a]volume=${gain.toFixed(2)}dB,apad${sound ? "[n];[0:a][n]amix=inputs=2:normalize=0:duration=longest" : ""}[aout]`;
+  let voice = `[1:a]volume=${gain.toFixed(2)}dB,apad${sound ? "[n];[0:a][n]amix=inputs=2:normalize=0:duration=longest" : ""}[aout]`;
+  if (sound) { // the two together can peak over 0 dB: one more fixed gain brings the mix back to -1 dB
+    const both = run(FFMPEG, ["-i", video, "-i", narration, "-filter_complex", voice.replace("[aout]", ",volumedetect[aout]"),
+                              "-map", "[aout]", "-t", String(length), "-f", "null", "-"], { ok: true }).stderr;
+    const over = parseFloat(both.split("max_volume:")[1]) + 1;
+    if (over > 0) voice = voice.replace("[aout]", `,volume=${(-over).toFixed(2)}dB[aout]`);
+  }
   run(FFMPEG, ["-v", "error", "-y", "-i", video, "-i", narration, "-filter_complex", voice,
                "-map", "0:v", "-map", "[aout]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest",
                "-movflags", "faststart", join(out, "voiced.mp4")]);

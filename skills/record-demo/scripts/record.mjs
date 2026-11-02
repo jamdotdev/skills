@@ -31,7 +31,8 @@ const AB = ["--session", "demo", "--args", `--force-device-scale-factor=${SCALE}
 const FFMPEG = tool("ffmpeg");
 const args = process.argv.slice(2);
 const vi = args.indexOf("--voice");
-const voiced = Object.fromEntries((vi >= 0 ? JSON.parse(readFileSync(args.splice(vi, 2)[1], "utf8")) : []).map((l) => [l.say, l.seconds]));
+const voiced = {}; // each line's lengths, in order: the same words can be voiced twice, at two lengths
+for (const l of vi >= 0 ? JSON.parse(readFileSync(args.splice(vi, 2)[1], "utf8")) : []) (voiced[l.say] ??= []).push(l.seconds);
 const [beatsFile, url, out] = args;
 if (!out) die("usage: node record.mjs <beats.json> <url> <out-dir> [--voice <lines.json>]");
 const beats = JSON.parse(readFileSync(beatsFile, "utf8"));
@@ -155,7 +156,7 @@ async function film(shots, frames, urls, titles) {
   return { ws, call, session };
 }
 
-const length = (text) => voiced[text] || 0.4 + text.trim().split(/\s+/).length / 2.6; // ponytail: even reading pace until the line is voiced
+const length = (text) => voiced[text]?.shift() ?? 0.4 + text.trim().split(/\s+/).length / 2.6; // ponytail: even reading pace until the line is voiced
 if (vi >= 0) for (const b of beats) for (const c of b.do) if (c[0] === "say" && !voiced[c[1]])
   console.error(`warning: "${c[1]}" is not in the voiced lines, so it is timed at reading pace; voice beats.json again`);
 
@@ -199,14 +200,17 @@ for (const [i, b] of beats.entries()) {
       // viewport. Filmed a step at a time, not live: each 60th of a second the page moves to its exact place and the
       // frame that shows it is stamped on the video's 60 fps grid, so the scroll is even however busy the machine
       // is. The time the steps really took is cut.
-      // It scrolls the nearest panel that hides the target, or else the window.
+      // It scrolls the nearest panel that hides the target; else the window, if the page scrolls; else the nearest panel.
       const [y0, d] = await on(cmd[1], `const root = document.scrollingElement, r = el.getBoundingClientRect();
-          let box = el.parentElement;
+          let box = el.parentElement, near = null;
           for (; box && box !== root && box !== document.body; box = box.parentElement) {
+            if (!(box.scrollHeight > box.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(box).overflowY))) continue;
+            near ??= box;
             const b = box.getBoundingClientRect();
-            if (box.scrollHeight > box.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(box).overflowY) && (r.top < b.top || r.bottom > b.bottom)) break;
+            if (r.top < b.top || r.bottom > b.bottom) break;
           }
-          box = box && box !== document.body ? box : root; window.__scroller = box;
+          box = box && box !== root && box !== document.body ? box : root.scrollHeight > innerHeight + 1 ? root : near ?? root;
+          window.__scroller = box;
           const top = box === root ? 0 : box.getBoundingClientRect().top;
           return [box.scrollTop, Math.max(-box.scrollTop, Math.min(el.getBoundingClientRect().top - top - box.clientHeight / 5,
             box.scrollHeight - box.clientHeight - box.scrollTop))];`);
@@ -348,12 +352,7 @@ const fine = "option framerate 6000\n"; // a 60th of a second is a whole number 
 writeFileSync(join(shots, "list.txt"), held.slice(0, -1).map(([a, p], k) => `file '${name(p)}'\n${fine}duration ${(held[k + 1][0] - a).toFixed(6)}\n`).join("")
                                         + `file '${name(held.at(-1)[1])}'\n${fine}`);
 const video = join(out, "video.mp4");
-// The take runs at 60 fps for the stepped scrolls; "option" lines above need -safe 0.
-const enc = spawnSync(FFMPEG, ["-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", join(shots, "list.txt"), "-vf", "fps=60",
-                               "-t", (end - held[0][0]).toFixed(3), "-c:v", "libx264", // without -t, fps holds the last frame as long as the gap before it
-                               "-preset", "fast", "-crf", "12", "-pix_fmt", "yuv420p", video], { stdio: "inherit" });
-if (enc.status !== 0) die("ffmpeg failed to encode the take");
-rmSync(shots, { recursive: true });
+// The timing is saved first, so a failed encode leaves the take recoverable from frames/.
 for (const x of [...beats, ...lines, ...presses]) x.at = r3(x.at);
 for (const b of beats) b.said = r3(b.said);
 for (const m of moves) { m.t0 = r3(m.t0); m.t1 = r3(m.t1); }
@@ -364,4 +363,10 @@ writeFileSync(join(out, "timeline.json"), JSON.stringify({
   urls: urls.map(([ts, u]) => ({ at: r3(Math.max(0, uncut(ts) - wall0)), url: u })),
   titles: titles.map(([ts, u]) => ({ at: r3(Math.max(0, uncut(ts) - wall0)), title: u })),
 }, null, 1));
+// The take runs at 60 fps for the stepped scrolls; "option" lines above need -safe 0.
+const enc = spawnSync(FFMPEG, ["-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", join(shots, "list.txt"), "-vf", "fps=60",
+                               "-t", (end - held[0][0]).toFixed(3), "-c:v", "libx264", // without -t, fps holds the last frame as long as the gap before it
+                               "-preset", "fast", "-crf", "12", "-pix_fmt", "yuv420p", video], { stdio: "inherit" });
+if (enc.status !== 0) die("ffmpeg failed to encode the take");
+rmSync(shots, { recursive: true });
 console.log(video);
