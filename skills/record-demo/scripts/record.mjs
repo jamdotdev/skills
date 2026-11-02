@@ -183,6 +183,8 @@ for (const [i, b] of beats.entries()) {
   shot = b.shot = b.shot ?? shot;
   const frame = shot === "wide" ? null : await on(shot, RECT);
   let left = null; // the shot as it was before a cut left the page or a scroll moved it
+  if (shot !== "wide" && b.do.slice(0, -1).some((c) => c[0] === "scrollto")) // one frame can't hold content that moves mid-beat
+    console.error(`warning: beat ${i + 1} scrolls before its end while framed; end the beat with scrollto and frame what it reveals in the next`);
   for (const [j, cmd] of b.do.entries()) {
     const last = !b.do.slice(j + 1).some(pointing); // a hand only steps aside once it's done for the beat
     const c0 = mono() - t0;
