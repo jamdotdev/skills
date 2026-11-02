@@ -212,7 +212,7 @@ for (const [i, b] of beats.entries()) {
       grab = {}; // from here on, only stepped frames count
       const w0 = Date.now() / 1000, v = w0 - wall0 - cuts.reduce((s, [a, b]) => s + b - a, 0);
       const s0 = w0 + Math.ceil(v * 60) / 60 - v; // on the grid, so each step lands on a frame of its own
-      let shown = y0, path = frames.at(-1)[1];
+      let shown = y0, path = frames.at(-1)[1], saved = w0;
       for (let k = 1; k <= n; k++) {
         const u = k / n, y = y0 + d * (u < 0.5 ? 4 * u ** 3 : 1 - (2 - 2 * u) ** 3 / 2);
         if (Math.abs(y - shown) >= 1 / SCALE) { // under a device pixel the page doesn't repaint: the last frame holds
@@ -233,11 +233,17 @@ for (const [i, b] of beats.entries()) {
             path = join(shots, `${String(frames.length).padStart(6, "0")}.jpg`);
             writeFileSync(path, Buffer.from(data, "base64"));
             shown = y;
+            saved = Date.now() / 1000;
           }
         }
         frames.push([s0 + k / 60, path, true]);
       }
       await sleep(s0 + n / 60 - Date.now() / 1000); // steps that needed no repaint can finish early: the cut never runs backward
+      if (grab.data && grab.at > saved) { // something painted after the last step, like an image loading in: the scroll ends on it
+        path = join(shots, `${String(frames.length).padStart(6, "0")}.jpg`);
+        writeFileSync(path, Buffer.from(grab.data, "base64"));
+        frames.push([s0 + n / 60, path, true]);
+      }
       grab = null;
       cuts.push([s0 + n / 60, Date.now() / 1000]);
       t0 += cuts.at(-1)[1] - cuts.at(-1)[0];
