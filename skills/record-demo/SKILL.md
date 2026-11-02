@@ -7,7 +7,7 @@ description: "Record a narrated, human-paced demo video of a web feature with ag
 
 A demo shows a person what changed in under a minute. Dead air comes from you thinking between commands, so never record while exploring. Explore first, write a screenplay of beats, then let the bundled player run it with no model in the loop.
 
-Needs `agent-browser` (0.38.1 or later), `ffmpeg`, Python 3 and `uv` (or `pip install pillow websockets`) on macOS, Linux or Windows (`python` instead of `python3` there). The player is `scripts/record.py` in this skill's folder. The narration comes from the `add-voiceover` skill, in the folder next to this one (`<skill-dir>/../add-voiceover`); without it, record a silent video. Install it with `npx skills add jamdotdev/skills --skill add-voiceover`.
+Needs `agent-browser` (0.38.1 or later), `ffmpeg` and Node 22 or later, on macOS, Linux or Windows. The scripts need no packages. The player is `scripts/record.mjs` in this skill's folder. The narration comes from the `add-voiceover` skill, in the folder next to this one (`<skill-dir>/../add-voiceover`); without it, record a silent video. Install it with `npx skills add jamdotdev/skills --skill add-voiceover`.
 
 ## 1. Rehearse without recording
 
@@ -40,7 +40,7 @@ Direct the camera before you write a command. A camera move is a cut the viewer 
 4. Stay framed across beats in the same area. Never zoom out and back in between them.
 5. Go `wide` when the page changes under the viewer, and for the last beat.
 
-The camera never follows clicks on its own. A frame that would zoom in less than 1.25x stays wide, and `polish.py` warns about a click outside its beat's frame.
+The camera never follows clicks on its own. A frame that would zoom in less than 1.25x stays wide, and `polish.mjs` warns about a click outside its beat's frame.
 
 - Write the lines with the rules in `add-voiceover`: short, spoken, one idea each, naming what the viewer should notice, not what the mouse does. Put a line just before the command it describes.
 - `do` entries are agent-browser commands. `humantype <selector> <text>` types one key at a time; plain `type` and `fill` put the whole text in one frame.
@@ -55,27 +55,27 @@ The camera never follows clicks on its own. A frame that would zoom in less than
 Voice the lines first, so each beat waits for its real narration, then record, then lay the voice under the video:
 
 ```bash
-python3 <add-voiceover-dir>/scripts/voiceover.py beats.json ./voice
-uv run --with websockets python <skill-dir>/scripts/record.py beats.json <url> ./demo-out --voice voice/lines.json
-uv run --with pillow python <skill-dir>/scripts/polish.py demo-out
-python3 <add-voiceover-dir>/scripts/voiceover.py demo-out/narration.json ./voice --video demo-out/polished.mp4
+node <add-voiceover-dir>/scripts/voiceover.mjs beats.json ./voice
+node <skill-dir>/scripts/record.mjs beats.json <url> ./demo-out --voice voice/lines.json
+node <skill-dir>/scripts/polish.mjs demo-out
+node <add-voiceover-dir>/scripts/voiceover.mjs demo-out/narration.json ./voice --video demo-out/polished.mp4
 ```
 
-`polish.py` gives the raw take the finish of a screen-recording editor: the camera runs the screenplay's shots over the whole composed shot, window and wallpaper included, easing between them in 0.7 to 1 s (a deeper zoom takes longer), and draws the pointer crisp at any zoom, blurred along its path while it moves, with a small squash and a fading ring on each press. The page sits as a rounded card with a shadow on the wallpaper in `assets/wallpaper.png` (`--background <image>` picks another; `--background none` fills the frame with the page edge to edge, for docs or side-by-side comparisons). `--frame safari` or `--frame chrome` puts the page in that browser's window, its address bar (and Chrome's tab title) following the page as it changes; use it when where you are in the app is part of the story. It renders at 2560x1440 and 60 fps, so text stays sharp even zoomed in. Timing does not change, so the narration still lines up. The last command reuses the lines the first one voiced and writes `voice/voiced.mp4`. Pick the voice as `add-voiceover` says before the first command, and keep it for both voice commands: the first command voices the final cut, and a different voice changes each line's length, which moves the clicks off their words. To rehearse cheaply, run them all with Kokoro, then again with the real voice. For a silent video, skip both voice commands and drop `--voice`; lines are then timed at reading pace and the voice can be added later.
+`polish.mjs` gives the raw take the finish of a screen-recording editor: the camera runs the screenplay's shots over the whole composed shot, window and wallpaper included, easing between them in 0.7 to 1 s (a deeper zoom takes longer), and draws the pointer crisp at any zoom, blurred along its path while it moves, with a small squash and a fading ring on each press. The page sits as a rounded card with a shadow on the wallpaper in `assets/wallpaper.png` (`--background <image>` picks another; `--background none` fills the frame with the page edge to edge, for docs or side-by-side comparisons). `--frame safari` or `--frame chrome` puts the page in that browser's window, its address bar (and Chrome's tab title) following the page as it changes; use it when where you are in the app is part of the story. It renders at 2560x1440 and 60 fps, so text stays sharp even zoomed in. It lays out each frame in a headless Chrome (agent-browser session `polish`), about six seconds per second of video, and keeps the take's frames as JPEGs in `polish-frames/` while it runs, up to a gigabyte for a minute, removed when it finishes. Timing does not change, so the narration still lines up. The last command reuses the lines the first one voiced and writes `voice/voiced.mp4`. Pick the voice as `add-voiceover` says before the first command, and keep it for both voice commands: the first command voices the final cut, and a different voice changes each line's length, which moves the clicks off their words. To rehearse cheaply, run them all with Kokoro, then again with the real voice. For a silent video, skip both voice commands and drop `--voice`; lines are then timed at reading pace and the voice can be added later.
 
-The page loads before recording starts, the viewport is 1280x720, and the player takes the frames straight from Chrome's screencast at 3x (agent-browser's own recorder captures at 1x), so the take is a true 3840x2160, at an even 30 fps; the camera and pointer move at 60. The take has no pointer; `polish.py` draws it, so always run it. The pointer moves like a hand: each path bends its own way and eases in and out in one movement to a point inside the target, rarely its centre, where it presses; and once the beat is done with it, it drifts sideways off the content. A field that already has focus is typed into without another click. The player writes `video.mp4`, `narration.json` with the second each line started, and `timeline.json` with each beat's shot and framed region, and the pointer's moves and presses.
+The page loads before recording starts, the viewport is 1280x720, and the player takes the frames straight from Chrome's screencast at 3x (agent-browser's own recorder captures at 1x), so the take is a true 3840x2160, at an even 30 fps; the camera and pointer move at 60. The take has no pointer; `polish.mjs` draws it, so always run it. The pointer moves like a hand: each path bends its own way and eases in and out in one movement to a point inside the target, rarely its centre, where it presses; and once the beat is done with it, it drifts sideways off the content. A field that already has focus is typed into without another click. The player writes `video.mp4`, `narration.json` with the second each line started, and `timeline.json` with each beat's shot and framed region, and the pointer's moves and presses.
 
 If a command fails, the player stops and prints the agent-browser output. Fix the selector in `beats.json` and run it again.
 
 ## 4. Check before you share
 
-Read what `polish.py` printed: the number of camera moves should match the shot changes you wrote, with no out-of-frame warning. Then extract one frame per beat, a second and a half after its `said` in `timeline.json`, and look at each:
+Read what `polish.mjs` printed: the number of camera moves should match the shot changes you wrote, with no out-of-frame warning. Then extract one frame per beat, a second and a half after its `said` in `timeline.json`, and look at each:
 
 ```bash
 ffmpeg -v error -ss <said + 1.5> -i voice/voiced.mp4 -frames:v 1 beat.png
 ```
 
-Re-record when a frame shows the wrong state or the frame cuts off what the line names; change the shot and run `polish.py` again when only the camera is wrong. Never edit the video to hide a failed step. Then run the checks in `add-voiceover`.
+Re-record when a frame shows the wrong state or the frame cuts off what the line names; change the shot and run `polish.mjs` again when only the camera is wrong. Never edit the video to hide a failed step. Then run the checks in `add-voiceover`.
 
 ## Share
 

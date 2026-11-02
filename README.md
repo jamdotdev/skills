@@ -64,8 +64,8 @@ These need no Jam account. With the Jam CLI, a video can become a Jam link to co
 - A free [Jam](https://jam.dev?utm_source=github&utm_medium=readme&utm_campaign=skills) account, for every skill except the three video skills.
 - The [Jam CLI](https://jam.dev/cli). A skill signs in when it needs to. `jam`, `jam-fix` and `jam-to-e2e` can read a Jam through Jam MCP instead, the Model Context Protocol (MCP) server the plugin connects.
 - For `video-to-jam`: ffmpeg and a local transcriber such as Whisper.
-- For `record-demo`: agent-browser, ffmpeg, Python 3 and uv.
-- For `add-voiceover`: ffmpeg and Python 3. An ElevenLabs key or the free Kokoro model gives a natural voice.
+- For `record-demo`: agent-browser, ffmpeg and Node 22 or later.
+- For `add-voiceover`: ffmpeg and Node 22 or later. An ElevenLabs key or the free Kokoro model (Python 3 and uv) gives a natural voice.
 - For `record-terminal-proof`: asciinema and agg.
 - In CI or a cloud agent: a [personal access token](https://jam.dev/docs/personal-access-tokens) in `JAM_TOKEN`.
 - For `jam-proof`: recording a web page needs only Chrome. Recording a window or the whole screen needs macOS or Linux (X11).
