@@ -178,6 +178,10 @@ const AGENT = tool("agent-browser");
 const shim = /\.(cmd|bat)$/i.test(AGENT), q = (x) => `"${x.replaceAll('"', '""')}"`; // a Windows .cmd shim only runs through the shell, quoted
 const ab = (...a) => (shim ? execFileSync(q(AGENT), ["--session", "polish", ...a].map(q), { encoding: "utf8", shell: true })
                            : execFileSync(AGENT, ["--session", "polish", ...a], { encoding: "utf8" }));
+// However polish ends, Ctrl-C included, its Chrome closes; a session already gone is fine.
+process.on("exit", () => { try { ab("close"); } catch {} });
+for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => process.exit(130));
+let enc, closed; // the encoder, and its exit, watched from the start so an early one is never missed
 ab("open", "about:blank");
 ab("set", "viewport", String(W), String(H));
 ab("open", pathToFileURL(join(import.meta.dirname, "polish.html")).href);
@@ -195,26 +199,30 @@ const session = (await call("Target.attachToTarget", { targetId: page.targetId, 
 async function run(expression) {
   const r = await call("Runtime.evaluate", { expression, awaitPromise: true }, session);
   if (r.exceptionDetails) {
-    rmSync(join(out, "polished.mp4"), { force: true }); // not a cut-short video that looks finished
-    die(`polish.html: ${r.exceptionDetails.exception?.description ?? r.exceptionDetails.text}`);
+    const why = `polish.html: ${r.exceptionDetails.exception?.description ?? r.exceptionDetails.text}`;
+    enc?.kill(); // let go of polished.mp4 (Windows won't delete an open file), so a cut-short video isn't left looking finished
+    await closed;
+    try { rmSync(join(out, "polished.mp4"), { force: true }); } catch {}
+    die(why);
   }
 }
 await run(`setup(${JSON.stringify({ W, H, PAD, RADIUS, BAR, barCss, cw, ch, left, u, kind, vw, bare,
                                     wallpaper: bare ? "" : pathToFileURL(resolve(wallpaper)).href })})`);
 
 const polished = join(out, "polished.mp4");
-const enc = spawn(FFMPEG, ["-v", "error", "-y", "-f", "image2pipe", "-framerate", String(FPS), "-i", "-",
+enc = spawn(FFMPEG, ["-v", "error", "-y", "-f", "image2pipe", "-framerate", String(FPS), "-i", "-",
                            "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "faststart", polished],
                   { stdio: ["pipe", "inherit", "inherit"] });
+closed = new Promise((r) => enc.on("close", r));
 enc.stdin.on("error", () => {}); // ffmpeg gone: its exit code below says so
 const total = Math.floor(duration * FPS);
 console.error(`filming ${total} frames`);
 for (let n = 0; n < total; n++) {
-  if (enc.exitCode !== null) break; // ffmpeg stopped: no drain will come
+  if (enc.exitCode !== null) break; // ffmpeg stopped: the exit-code check below reports it
   const t = n / FPS;
   await run(`draw(${JSON.stringify(frameState(t, frameAt(t)))})`);
   const { data } = await call("Page.captureScreenshot", { format: "jpeg", quality: 95, optimizeForSpeed: true }, session);
-  if (!enc.stdin.write(Buffer.from(data, "base64"))) await new Promise((r) => enc.stdin.once("drain", r));
+  if (!enc.stdin.write(Buffer.from(data, "base64"))) await Promise.race([new Promise((r) => enc.stdin.once("drain", r)), closed]);
 }
 // The poster: the frame most people see first, as a thumbnail or a still in a PR. The end of the beat marked
 // "poster" (the last by default), where its result has settled and the pointer has stepped aside.
@@ -223,9 +231,8 @@ const tp = (tl.beats[pb + 1]?.at ?? duration) - 0.4;
 await run(`draw(${JSON.stringify(frameState(tp, frameAt(tp)))})`);
 writeFileSync(join(out, "poster.png"), Buffer.from((await call("Page.captureScreenshot", { format: "png" }, session)).data, "base64"));
 enc.stdin.end();
-await new Promise((r) => enc.on("close", r));
+await closed;
 ws.close();
-try { ab("close"); } catch {} // a session already gone is fine
 rmSync(frames, { recursive: true });
 if (enc.exitCode !== 0) die("ffmpeg failed to encode the polished video");
 console.log(polished);

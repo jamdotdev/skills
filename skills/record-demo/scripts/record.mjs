@@ -43,6 +43,7 @@ const execFileP = promisify(execFile);
 const shim = /\.(cmd|bat)$/i.test(AGENT); // a Windows .cmd shim only runs through the shell
 // However the player ends, the session closes: a retake starts from a fresh browser, not this take's leftovers.
 process.on("exit", () => spawnSync(shim ? `"${AGENT}"` : AGENT, [...AB, "close"], { shell: shim }));
+for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => process.exit(130)); // Ctrl-C too: signals skip "exit" otherwise
 let fresh = true; // a retake right after a take can meet the last session still closing: its first command gets one retry
 async function ab(...a) {
   for (let retry = fresh; ; retry = false) {
