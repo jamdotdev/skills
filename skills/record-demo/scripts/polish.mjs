@@ -10,7 +10,7 @@
 // Each frame is laid out in polish.html and filmed in a headless Chrome through agent-browser, so nothing needs installing.
 // Timing is untouched, so narration.json still lines up with polished.mp4.
 import { execFileSync, spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { delimiter, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -178,14 +178,14 @@ const AGENT = tool("agent-browser");
 const shim = /\.(cmd|bat)$/i.test(AGENT), q = (x) => `"${x.replaceAll('"', '""')}"`; // a Windows .cmd shim only runs through the shell, quoted
 const ab = (...a) => (shim ? execFileSync(q(AGENT), ["--session", "polish", ...a].map(q), { encoding: "utf8", shell: true })
                            : execFileSync(AGENT, ["--session", "polish", ...a], { encoding: "utf8" }));
-// However polish ends, Ctrl-C or a timeout included, its Chrome closes, and a run that didn't finish leaves no
-// cut-short polished.mp4 that looks complete, and no frames.
-let finished = false;
+// The video is written as polished.part.mp4 and renamed only once it is complete, so a run that stops early never
+// touches the last good polished.mp4. However polish ends, Ctrl-C or a timeout included, its Chrome closes and its
+// frames and part file go.
+const polished = join(out, "polished.mp4"), part = join(out, "polished.part.mp4");
 process.on("exit", () => {
   try { ab("close"); } catch {} // a session already gone is fine
-  if (finished) return;
   enc?.kill();
-  for (const p of [join(out, "polished.mp4"), frames]) try { rmSync(p, { recursive: true, force: true }); } catch {}
+  for (const p of [part, frames]) try { rmSync(p, { recursive: true, force: true }); } catch {}
 });
 for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => process.exit(130));
 let enc, closed; // the encoder, and its exit, watched from the start so an early one is never missed
@@ -207,7 +207,7 @@ async function run(expression) {
   const r = await call("Runtime.evaluate", { expression, awaitPromise: true }, session);
   if (r.exceptionDetails) {
     const why = `polish.html: ${r.exceptionDetails.exception?.description ?? r.exceptionDetails.text}`;
-    enc?.kill(); // let go of polished.mp4 first: Windows won't delete an open file
+    enc?.kill(); // let go of the part file first: Windows won't delete an open file
     await closed;
     die(why);
   }
@@ -215,9 +215,8 @@ async function run(expression) {
 await run(`setup(${JSON.stringify({ W, H, PAD, RADIUS, BAR, barCss, cw, ch, left, u, kind, vw, bare,
                                     wallpaper: bare ? "" : pathToFileURL(resolve(wallpaper)).href })})`);
 
-const polished = join(out, "polished.mp4");
 enc = spawn(FFMPEG, ["-v", "error", "-y", "-f", "image2pipe", "-framerate", String(FPS), "-i", "-",
-                           "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "faststart", polished],
+                           "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "faststart", part],
                   { stdio: ["pipe", "inherit", "inherit"] });
 closed = new Promise((r) => enc.on("close", r));
 enc.stdin.on("error", () => {}); // ffmpeg gone: its exit code below says so
@@ -241,5 +240,5 @@ await closed;
 ws.close();
 rmSync(frames, { recursive: true });
 if (enc.exitCode !== 0) die("ffmpeg failed to encode the polished video");
-finished = true;
+renameSync(part, polished);
 console.log(polished);
