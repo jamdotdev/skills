@@ -56,7 +56,8 @@ async function ab(...a) {
 // Run JS on one element: CSS, or XPath after "xpath=".
 async function on(sel, body) {
   const find = "s.startsWith('xpath=') ? document.evaluate(s.slice(6), document, null, 9, null).singleNodeValue : document.querySelector(s)";
-  return JSON.parse(await ab("eval", `(s => { const el = ${find}; ${body} })(${JSON.stringify(sel)})`));
+  // One line: a Windows .cmd shim goes through cmd.exe, which ends a command at its first newline.
+  return JSON.parse(await ab("eval", `(s => { const el = ${find}; ${body.replace(/\n\s*/g, " ")} })(${JSON.stringify(sel)})`));
 }
 
 const sleep = (s) => new Promise((r) => setTimeout(r, Math.max(0, s) * 1000));
@@ -181,7 +182,7 @@ for (const [i, b] of beats.entries()) {
   b.at = mono() - t0;
   shot = b.shot = b.shot ?? shot;
   const frame = shot === "wide" ? null : await on(shot, RECT);
-  let left = null; // the shot as it was when a cut left the page
+  let left = null; // the shot as it was before a cut left the page or a scroll moved it
   for (const [j, cmd] of b.do.entries()) {
     const last = !b.do.slice(j + 1).some(pointing); // a hand only steps aside once it's done for the beat
     const c0 = mono() - t0;
@@ -191,14 +192,18 @@ for (const [i, b] of beats.entries()) {
       talking = lines.at(-1).at + length(cmd[1]);
       busy.push([lines.at(-1).at, talking]);
     } else if (cmd[0] === "scrollto") {
+      if (shot !== "wide" && left === null) left = await on(shot, RECT); // the shot as it was before the scroll moved it
       // Eased like a hand on a trackpad, farther takes longer, leaving the target a fifth of the way down the
       // viewport. Filmed a step at a time, not live: each 60th of a second the page moves to its exact place and the
       // frame that shows it is stamped on the video's 60 fps grid, so the scroll is even however busy the machine
       // is. The time the steps really took is cut.
-      // It scrolls the window, or, when the page itself doesn't scroll (many app shells), the panel that holds the target.
-      const [y0, d] = await on(cmd[1], `const root = document.scrollingElement;
-          let box = root.scrollHeight > innerHeight + 1 ? root : el.parentElement;
-          while (box !== root && box && !(box.scrollHeight > box.clientHeight && /auto|scroll/.test(getComputedStyle(box).overflowY))) box = box.parentElement;
+      // It scrolls the nearest panel that hides the target, or else the window.
+      const [y0, d] = await on(cmd[1], `const root = document.scrollingElement, r = el.getBoundingClientRect();
+          let box = el.parentElement;
+          for (; box && box !== root && box !== document.body; box = box.parentElement) {
+            const b = box.getBoundingClientRect();
+            if (box.scrollHeight > box.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(box).overflowY) && (r.top < b.top || r.bottom > b.bottom)) break;
+          }
           box = box && box !== document.body ? box : root; window.__scroller = box;
           const top = box === root ? 0 : box.getBoundingClientRect().top;
           return [box.scrollTop, Math.max(-box.scrollTop, Math.min(el.getBoundingClientRect().top - top - box.clientHeight / 5,
@@ -212,10 +217,11 @@ for (const [i, b] of beats.entries()) {
         const u = k / n, y = y0 + d * (u < 0.5 ? 4 * u ** 3 : 1 - (2 - 2 * u) ** 3 / 2);
         if (Math.abs(y - shown) >= 1 / SCALE) { // under a device pixel the page doesn't repaint: the last frame holds
           // The frame painted once the scroll has landed. Chrome's own scroll offset on a frame lags on small moves, so
-          // its paint time decides. When no such frame comes within 60 ms (a scrolling panel sometimes sends none), a screenshot of the page
-          // as it is now stands in.
+          // its paint time decides. When no such frame comes within 60 ms (a scrolling panel sometimes sends none), a
+          // screenshot of the page as it is now stands in.
           grab.data = null;
-          await call("Runtime.evaluate", { expression: `__scroller.scrollTo({top: ${y}, behavior: 'instant'})` }, session);
+          const moved = await call("Runtime.evaluate", { expression: `__scroller.scrollTo({top: ${y}, behavior: 'instant'})` }, session);
+          if (moved?.exceptionDetails) die(`scrollto ${cmd[1]}: ${moved.exceptionDetails.exception?.description ?? moved.exceptionDetails.text}`);
           const landed = Date.now() / 1000 - 0.005;
           const data = await new Promise((done) => {
             const check = () => grab.data && grab.at >= landed && done(grab.data);

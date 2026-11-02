@@ -75,7 +75,7 @@ async function elevenlabs(text, wav, before, after) {
   rmSync(`${wav}.mp3`);
 }
 
-const command = (argv) => (text, wav) => run(argv[0], argv.slice(1).map((a) => a.replaceAll("{out}", wav).replaceAll("{text}", text)), { input: text });
+const command = (argv) => (text, wav) => run(argv[0], argv.slice(1).map((a) => a.replaceAll("{out}", () => wav).replaceAll("{text}", () => text)), { input: text });
 
 const kokoro = join(process.env.KOKORO_DIR || join(homedir(), ".cache", "kokoro"), "voices-v1.0.bin");
 let engine, speak;

@@ -13,7 +13,7 @@ Needs `agent-browser` (0.38.1 or later), `ffmpeg` and Node 22 or later, on macOS
 
 Open the page, run `agent-browser snapshot -i`, and run every action once. Pick CSS selectors that still match after earlier steps change the page; refs like `@e3` go stale.
 
-If the app needs sign-in or seed data, set that up now, in the session the player uses, launched the way it launches it: `agent-browser --session demo --args "--force-device-scale-factor=3" open <url>`. The flag renders the page at 3x for a sharp take; a session started without it keeps its 1x screen. The player closes the session after each take, so for a sign-in that lasts across takes, set `AGENT_BROWSER_PROFILE` to a folder of your own, like `./demo-profile`, for this command and for every run of the player.
+If the app needs sign-in or seed data, set that up now, in the session the player uses, launched the way it launches it: `agent-browser --session demo --args "--force-device-scale-factor=3" open <url>`. The flag renders the page at 3x for a sharp take; a session started without it keeps its 1x screen. The player closes the session after each take, so for a sign-in that lasts across takes, put `AGENT_BROWSER_PROFILE=./demo-profile` (a folder of your own) in front of this command and of every `record.mjs` run. Don't export it: `polish.mjs` would then open its Chrome in that profile.
 
 ## 2. Write the screenplay, `beats.json`
 

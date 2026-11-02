@@ -220,7 +220,7 @@ writeFileSync(join(out, "poster.png"), Buffer.from((await call("Page.captureScre
 enc.stdin.end();
 await new Promise((r) => enc.on("close", r));
 ws.close();
-ab("close");
+try { ab("close"); } catch {} // a session already gone is fine
 rmSync(frames, { recursive: true });
 if (enc.exitCode !== 0) die("ffmpeg failed to encode the polished video");
 console.log(polished);
