@@ -13,7 +13,7 @@ Needs `ffmpeg` and Node 22 or later. The script is `scripts/voiceover.mjs` in th
 
 The script takes the first voice that is set up:
 
-1. `VOICEOVER_TTS`: the team's own command. `{out}` is the `.wav` file to write and `{text}` the line, also sent on stdin.
+1. `VOICEOVER_TTS`: the team's own command. `{out}` is the `.wav` file to write and `{text}` the line, also sent on stdin. Quote an argument that holds spaces (`--voice="Jane Doe"`); backslash escapes are not read.
 2. `ELEVENLABS_API_KEY`: ElevenLabs. Defaults: model `eleven_v4`, voice `iP95p4xoKVk53GoZ742B`, stability 0.5, similarity 0.75, speaker boost on, and each line voiced with the two lines around it as context so the intonation carries across. `ELEVENLABS_VOICE_ID` and `ELEVENLABS_MODEL_ID` change them; for a female voice use River, `SAz9YHcvj6GT2YYXdXww`. v4 has no speed or style setting: pace it with punctuation and line length.
 3. Kokoro, a free local model, once installed (`~/.cache/kokoro` holds its files) and Python 3 and `uv` are on PATH. Voice `am_michael`; `KOKORO_VOICE` picks another (`af_heart`, `bf_emma`, `bm_george`).
 4. macOS `say`, for drafts only.

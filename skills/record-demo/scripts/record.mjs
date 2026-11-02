@@ -193,8 +193,8 @@ for (const [i, b] of beats.entries()) {
       // viewport. Filmed a step at a time, not live: each 60th of a second the page moves to its exact place and the
       // frame that shows it is stamped on the video's 60 fps grid, so the scroll is even however busy the machine
       // is. The time the steps really took is cut.
-      const [y0, d] = await on(cmd[1], `return [scrollY, Math.min(el.getBoundingClientRect().top - innerHeight / 5,
-          document.scrollingElement.scrollHeight - innerHeight - scrollY)]`);
+      const [y0, d] = await on(cmd[1], `return [scrollY, Math.max(-scrollY, Math.min(el.getBoundingClientRect().top - innerHeight / 5,
+          document.scrollingElement.scrollHeight - innerHeight - scrollY))]`);
       const n = Math.round((Math.min(4000, 1000 + 0.8 * Math.abs(d)) / 1000) * 60);
       grab = {}; // from here on, only stepped frames count
       const w0 = Date.now() / 1000, v = w0 - wall0 - cuts.reduce((s, [a, b]) => s + b - a, 0);
@@ -222,6 +222,7 @@ for (const [i, b] of beats.entries()) {
         }
         frames.push([s0 + k / 60, path, true]);
       }
+      await sleep(s0 + n / 60 - Date.now() / 1000); // steps that needed no repaint can finish early: the cut never runs backward
       grab = null;
       cuts.push([s0 + n / 60, Date.now() / 1000]);
       t0 += cuts.at(-1)[1] - cuts.at(-1)[0];

@@ -81,7 +81,7 @@ const kokoro = join(process.env.KOKORO_DIR || join(homedir(), ".cache", "kokoro"
 let engine, speak;
 if (process.env.VOICEOVER_TTS) {
   engine = ["custom", process.env.VOICEOVER_TTS];
-  // Shell-style words: quotes group, even mid-word, so --voice="Jane Doe" stays one argument.
+  // Shell-style words: quotes group, even mid-word, so --voice="Jane Doe" stays one argument. Backslash escapes are not read.
   speak = command(process.env.VOICEOVER_TTS.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g).map((a) => a.replace(/"([^"]*)"|'([^']*)'/g, "$1$2")));
 } else if (process.env.ELEVENLABS_API_KEY) {
   engine = ["elevenlabs", VOICE, MODEL];
@@ -144,9 +144,9 @@ if (video) {
   // One gain for the whole track, peaks at -1 dB. loudnorm and other dynamic levelers pump up each word's tail into an echo.
   const peak = run(FFMPEG, ["-i", narration, "-af", "volumedetect", "-f", "null", "-"], { ok: true }).stderr;
   const gain = -1 - parseFloat(peak.split("max_volume:")[1]);
-  // A video with its own sound keeps it, at its own level, under the narration.
+  // A video with its own sound keeps it, at its own level, under the narration, to the video's end however short it is.
   const sound = run(FFPROBE, ["-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=p=0", video]).stdout.trim();
-  const voice = `[1:a]volume=${gain.toFixed(2)}dB,apad${sound ? "[n];[0:a][n]amix=inputs=2:normalize=0:duration=first" : ""}[aout]`;
+  const voice = `[1:a]volume=${gain.toFixed(2)}dB,apad${sound ? "[n];[0:a][n]amix=inputs=2:normalize=0:duration=longest" : ""}[aout]`;
   run(FFMPEG, ["-v", "error", "-y", "-i", video, "-i", narration, "-filter_complex", voice,
                "-map", "0:v", "-map", "[aout]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest",
                "-movflags", "faststart", join(out, "voiced.mp4")]);
