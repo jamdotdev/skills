@@ -115,6 +115,8 @@ async function stepAside() {
   await move(x, y, uniform(700, 1100));
 }
 
+let grab = null; // during a stepped scroll: the newest frame Chrome sent, {data, at, seen}
+
 async function film(shots, frames, urls, titles) {
   // Chrome sends a frame whenever the page repaints; each is saved with the moment it was painted. The address is
   // kept too, as it changes, for a browser frame around the video.
@@ -131,6 +133,7 @@ async function film(shots, frames, urls, titles) {
     if (m.id) return replies.get(m.id)?.(m.result);
     if (m.method === "Page.screencastFrame") {
       ws.send(JSON.stringify({ id: ++id, method: "Page.screencastFrameAck", params: { sessionId: p.sessionId }, sessionId: session }));
+      if (grab) return Object.assign(grab, { data: p.data, at: p.metadata.timestamp }).seen?.();
       const path = join(shots, `${String(frames.length).padStart(6, "0")}.jpg`);
       writeFileSync(path, Buffer.from(p.data, "base64"));
       frames.push([p.metadata.timestamp, path]);
@@ -148,7 +151,7 @@ async function film(shots, frames, urls, titles) {
   // Quality 80 looks the same as 95 at 1:1 but keeps up with Chrome at about 55 fps; 95 drops to about 43, unevenly.
   await call("Page.startScreencast", { format: "jpeg", quality: 80, maxWidth: 1280 * SCALE, maxHeight: 720 * SCALE }, session);
   await call("Target.setDiscoverTargets", { discover: true }); // title changes arrive as target updates
-  return ws;
+  return { ws, call, session };
 }
 
 const length = (text) => voiced[text] || 0.4 + text.trim().split(/\s+/).length / 2.6; // ponytail: even reading pace until the line is voiced
@@ -162,7 +165,7 @@ await ab("mouse", "move", "640", "520");
 const shots = join(out, "frames"), frames = [], urls = [], titles = [];
 rmSync(shots, { recursive: true, force: true });
 mkdirSync(shots);
-const ws = await film(shots, frames, urls, titles);
+const { ws, call, session } = await film(shots, frames, urls, titles);
 while (!frames.length) await sleep(0.05);
 t0 = mono(); wall0 = Date.now() / 1000; // video time 0, on both clocks
 await sleep(1.2); // let the viewer take in the page before the first word
@@ -187,13 +190,41 @@ for (const [i, b] of beats.entries()) {
       busy.push([lines.at(-1).at, talking]);
     } else if (cmd[0] === "scrollto") {
       // Eased like a hand on a trackpad, farther takes longer, leaving the target a fifth of the way down the
-      // viewport. The browser's own smooth scroll is too quick to follow on video.
-      const ms = await on(cmd[1], `const y0 = scrollY, d = Math.min(el.getBoundingClientRect().top - innerHeight / 5,
-          document.scrollingElement.scrollHeight - innerHeight - y0), ms = Math.min(4000, 1000 + 0.8 * Math.abs(d)), t = performance.now();
-        const f = now => { const p = Math.min(1, (now - t) / ms);
-          scrollTo({top: y0 + d * (p < 0.5 ? 4 * p ** 3 : 1 - (2 - 2 * p) ** 3 / 2), behavior: 'instant'}); if (p < 1) requestAnimationFrame(f); };
-        requestAnimationFrame(f); return ms;`);
-      await sleep(ms / 1000 + 0.2);
+      // viewport. Filmed a step at a time, not live: each 60th of a second the page moves to its exact place and the
+      // frame that shows it is stamped on the video's 60 fps grid, so the scroll is even however busy the machine
+      // is. The time the steps really took is cut.
+      const [y0, d] = await on(cmd[1], `return [scrollY, Math.min(el.getBoundingClientRect().top - innerHeight / 5,
+          document.scrollingElement.scrollHeight - innerHeight - scrollY)]`);
+      const n = Math.round((Math.min(4000, 1000 + 0.8 * Math.abs(d)) / 1000) * 60);
+      grab = {}; // from here on, only stepped frames count
+      const w0 = Date.now() / 1000, v = w0 - wall0 - cuts.reduce((s, [a, b]) => s + b - a, 0);
+      const s0 = w0 + Math.ceil(v * 60) / 60 - v; // on the grid, so each step lands on a frame of its own
+      let shown = y0, path = frames.at(-1)[1];
+      for (let k = 1; k <= n; k++) {
+        const u = k / n, y = y0 + d * (u < 0.5 ? 4 * u ** 3 : 1 - (2 - 2 * u) ** 3 / 2);
+        if (Math.abs(y - shown) >= 1 / SCALE) { // under a device pixel the page doesn't repaint: the last frame holds
+          // The frame painted once the scroll has landed. Chrome's own scroll offset on a frame lags on small moves, so
+          // its paint time decides; a page that sends nothing new in 150 ms holds its last frame.
+          grab.data = null;
+          await call("Runtime.evaluate", { expression: `scrollTo({top: ${y}, behavior: 'instant'})` }, session);
+          const landed = Date.now() / 1000 - 0.005;
+          const data = await new Promise((done) => {
+            const check = () => grab.data && grab.at >= landed && done(grab.data);
+            grab.seen = check;
+            check();
+            setTimeout(() => done(null), 150);
+          });
+          if (data) {
+            path = join(shots, `${String(frames.length).padStart(6, "0")}.jpg`);
+            writeFileSync(path, Buffer.from(data, "base64"));
+            shown = y;
+          }
+        }
+        frames.push([s0 + k / 60, path, true]);
+      }
+      grab = null;
+      cuts.push([s0 + n / 60, Date.now() / 1000]);
+      t0 += cuts.at(-1)[1] - cuts.at(-1)[0];
       busy.push([c0, mono() - t0]);
     } else if (cmd[0] === "cut") { // a wait nobody needs to watch, like a page loading, is cut from the take
       if (cmd[1] === "open") { // leaving the page: the line finishes and the camera measures its shot first
@@ -219,6 +250,7 @@ for (const [i, b] of beats.entries()) {
       }
       let text = cmd[2];
       if (text.startsWith("$ ")) { // a value only known now, like an emailed code; the wait for it is cut from the take
+        console.error(`running: ${text.slice(2)}`); // beats.json can run commands: say which, so none runs unseen
         const c0 = Date.now() / 1000;
         text = (await promisify(exec)(text.slice(2))).stdout.trim().split("\n").at(-1).trim();
         cut(c0);
@@ -269,14 +301,18 @@ for (const [a, b] of cuts) {
   const k = frames.findLastIndex(([ts]) => a < ts && ts < b);
   if (k >= 0) inside.set(k, b);
 }
-let kept = frames.flatMap(([ts, p], k) => (inside.has(k) ? [[uncut(inside.get(k)), p]]
-  : cuts.some(([a, b]) => a < ts && ts < b) ? [] : [[uncut(ts), p]]));
+let kept = frames.flatMap(([ts, p, stepped], k) => (inside.has(k) ? [[uncut(inside.get(k)), p]]
+  : cuts.some(([a, b]) => a < ts && ts < b) ? [] : [[uncut(ts), p, stepped]]));
 end = uncut(end);
 // Each frame lasts until the next repaint; a frame painted before time 0 opens the video.
 const first = kept[0][0] <= wall0 ? kept.findLastIndex(([ts]) => ts <= wall0) : 0;
 const held = [];
-for (let [ts, p] of kept.slice(first)) {
+for (let [ts, p, stepped] of kept.slice(first)) {
+  // Live, Chrome sends 3x frames as fast as it can encode them, 35 to 55 a second and unevenly: each waits for the
+  // next 30th of a second, since an even 30 reads smoother than a page that moves on frames 1, 2 and 5. Stepped
+  // scroll frames already sit on the 60 fps grid.
   ts = Math.max(ts, wall0);
+  if (!stepped) ts = wall0 + Math.ceil((ts - wall0) * 30 - 1e-6) / 30;
   if (ts >= end) break;
   if (held.length && ts - held.at(-1)[0] < 0.001) held.at(-1)[1] = p; // ffmpeg reads a zero duration as unset and holds that frame far too long
   else held.push([ts, p]);
@@ -284,14 +320,12 @@ for (let [ts, p] of kept.slice(first)) {
 held.push([end, held.at(-1)[1]]);
 // Each image needs a fine timebase: by default ffmpeg reads one at 25 fps and rounds every frame's time to 40 ms.
 const name = (p) => p.split(/[\\/]/).pop();
-const fine = "option framerate 1000\n";
-writeFileSync(join(shots, "list.txt"), held.slice(0, -1).map(([a, p], k) => `file '${name(p)}'\n${fine}duration ${(held[k + 1][0] - a).toFixed(4)}\n`).join("")
+const fine = "option framerate 6000\n"; // a 60th of a second is a whole number of ticks
+writeFileSync(join(shots, "list.txt"), held.slice(0, -1).map(([a, p], k) => `file '${name(p)}'\n${fine}duration ${(held[k + 1][0] - a).toFixed(6)}\n`).join("")
                                         + `file '${name(held.at(-1)[1])}'\n${fine}`);
 const video = join(out, "video.mp4");
-// Chrome sends 3x frames as fast as it can encode them, 35 to 55 a second and unevenly; an even 30 reads smoother
-// than a page that moves on frames 1, 2 and 5. polish.mjs still draws the camera and pointer at 60. "option" lines
-// above need -safe 0.
-const enc = spawnSync(FFMPEG, ["-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", join(shots, "list.txt"), "-vf", "fps=30",
+// The take runs at 60 fps for the stepped scrolls; "option" lines above need -safe 0.
+const enc = spawnSync(FFMPEG, ["-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", join(shots, "list.txt"), "-vf", "fps=60",
                                "-t", (end - held[0][0]).toFixed(3), "-c:v", "libx264", // without -t, fps holds the last frame as long as the gap before it
                                "-preset", "fast", "-crf", "12", "-pix_fmt", "yuv420p", video], { stdio: "inherit" });
 if (enc.status !== 0) die("ffmpeg failed to encode the take");

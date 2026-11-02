@@ -10,7 +10,7 @@
 // Each frame is laid out in polish.html and filmed in a headless Chrome through agent-browser, so nothing needs installing.
 // Timing is untouched, so narration.json still lines up with polished.mp4.
 import { execFileSync, spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { delimiter, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -42,10 +42,9 @@ const out = args[0] || die("usage: node polish.mjs <out-dir> [--background <imag
 const tl = JSON.parse(readFileSync(join(out, "timeline.json"), "utf8"));
 const src = join(out, "video.mp4");
 const FFMPEG = tool("ffmpeg");
-const probe = execFileSync(tool("ffprobe"), ["-v", "error", "-select_streams", "v", "-show_entries", "stream=width,height,r_frame_rate",
+const probe = execFileSync(tool("ffprobe"), ["-v", "error", "-select_streams", "v", "-show_entries", "stream=width,height",
                                              "-show_entries", "format=duration", "-of", "json", src], { encoding: "utf8" });
-const { streams: [{ width: sw, height: sh, r_frame_rate: rate }], format: { duration } } = JSON.parse(probe);
-const srcFps = rate.split("/").reduce((a, b) => a / b); // "30/1"
+const { streams: [{ width: sw, height: sh }], format: { duration } } = JSON.parse(probe);
 const [vw, vh] = tl.viewport;
 
 const ease = (u) => { u = Math.min(1, Math.max(0, u)); return u < 0.5 ? 4 * u ** 3 : 1 - (-2 * u + 2) ** 3 / 2; };
@@ -160,13 +159,20 @@ function frameState(t, frame) {
            unit: (CURSOR * css * z * squash(t)) / 21, url: latest("url", t), title: latest("title", t) };
 }
 
-// The take's frames as images polish.html can show, one per frame of the take.
+// The take's frames as images polish.html can show.
 const frames = resolve(out, "polish-frames");
 rmSync(frames, { recursive: true, force: true });
 mkdirSync(frames);
-execFileSync(FFMPEG, ["-v", "error", "-i", src, "-q:v", "2", join(frames, "%06d.jpg")]);
-const count = readdirSync(frames).length;
-const frameUrl = (n) => pathToFileURL(join(frames, `${String(n + 1).padStart(6, "0")}.jpg`)).href;
+// Only frames that change are kept (a still page repeats one), each with the second it starts.
+const log = spawnSync(FFMPEG, ["-i", src, "-vf", "mpdecimate=hi=0:lo=0:frac=0,showinfo", "-fps_mode", "vfr", "-q:v", "2", join(frames, "%06d.jpg")],
+                      { encoding: "utf8", maxBuffer: 1 << 28 });
+if (log.status !== 0) die(`ffmpeg failed to read the take: ${log.stderr.slice(-500)}`);
+const starts = [...log.stderr.matchAll(/pts_time:\s*([\d.]+)/g)].map((m) => parseFloat(m[1]));
+const frameAt = (t) => {
+  let n = 0;
+  while (n + 1 < starts.length && starts[n + 1] <= t + 1e-6) n++;
+  return pathToFileURL(join(frames, `${String(n + 1).padStart(6, "0")}.jpg`)).href;
+};
 
 const AGENT = tool("agent-browser");
 const ab = (...a) => execFileSync(AGENT, ["--session", "polish", ...a], { encoding: "utf8", shell: /\.(cmd|bat)$/i.test(AGENT) });
@@ -199,7 +205,7 @@ const total = Math.floor(duration * FPS);
 console.error(`filming ${total} frames`);
 for (let n = 0; n < total; n++) {
   const t = n / FPS;
-  await run(`draw(${JSON.stringify(frameState(t, frameUrl(Math.min(count - 1, Math.floor(t * srcFps + 1e-6)))))})`);
+  await run(`draw(${JSON.stringify(frameState(t, frameAt(t)))})`);
   const { data } = await call("Page.captureScreenshot", { format: "jpeg", quality: 95, optimizeForSpeed: true }, session);
   if (!enc.stdin.write(Buffer.from(data, "base64"))) await new Promise((r) => enc.stdin.once("drain", r));
 }
@@ -207,7 +213,7 @@ for (let n = 0; n < total; n++) {
 // "poster" (the last by default), where its result has settled and the pointer has stepped aside.
 const pb = tl.beats.findIndex((b) => b.poster) >= 0 ? tl.beats.findIndex((b) => b.poster) : tl.beats.length - 1;
 const tp = (tl.beats[pb + 1]?.at ?? duration) - 0.4;
-await run(`draw(${JSON.stringify(frameState(tp, frameUrl(Math.min(count - 1, Math.floor(tp * srcFps)))))})`);
+await run(`draw(${JSON.stringify(frameState(tp, frameAt(tp)))})`);
 writeFileSync(join(out, "poster.png"), Buffer.from((await call("Page.captureScreenshot", { format: "png" }, session)).data, "base64"));
 enc.stdin.end();
 await new Promise((r) => enc.on("close", r));
