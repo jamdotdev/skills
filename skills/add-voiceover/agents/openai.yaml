@@ -1,0 +1,4 @@
+interface:
+  display_name: "Add Voiceover"
+  short_description: "Add a spoken voiceover to a video, each line on its moment"
+  default_prompt: "Use $add-voiceover to add a narrated voiceover to this video."

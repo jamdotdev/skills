@@ -1,0 +1,4 @@
+interface:
+  display_name: "Record Demo"
+  short_description: "Record a narrated, human-paced demo video of a web feature"
+  default_prompt: "Use $record-demo to record a narrated demo video of this feature."

@@ -1,0 +1,158 @@
+<!doctype html>
+<!-- The stage polish.mjs films: the take as a rounded card on a wallpaper, in an optional browser window, with the
+     pointer and click rings over it. polish.mjs calls setup() once and draw() per frame, then screenshots the page. -->
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; overflow: hidden; background: #000; }
+  .layer { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  .fill { position: fixed; inset: 0; }
+  #bar { position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden;
+         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  #bar div { position: absolute; transform: translateY(-50%); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #over svg.cursor { position: absolute; mix-blend-mode: plus-lighter; overflow: visible; }
+</style>
+<body>
+<div id="bg" class="layer"><div id="wall"></div><div id="shadow"></div></div>
+<canvas id="up" class="fill" style="mix-blend-mode: plus-lighter"></canvas>
+<canvas id="down" class="fill" style="mix-blend-mode: difference"></canvas>
+<div id="cam" class="layer"><div id="card"><div id="bar"></div><img id="take"></div></div>
+<div id="over" class="fill"><svg id="rings" class="fill" width="100%" height="100%"></svg><div id="hand" class="fill" style="isolation: isolate"></div></div>
+<script>
+let L, shown = {};
+const GREY = "rgb(95,99,104)", DIM = "rgb(60,64,67)";
+// The arrow, in units of 1/21 of the pointer's height: a near-black arrow in an even white rim with round joins,
+// so the rim stays even down the thin tail, on a soft drop shadow.
+const ARROW = "M0 0L0 16.4L4 12.7L6.5 18.6L9 17.5L6.6 11.8L11.6 11.8Z";
+const CURSOR = `<defs><filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.3"/></filter></defs>
+  <path d="${ARROW}" transform="translate(0.3 0.9)" fill="#000" stroke="#000" stroke-width="2.5" stroke-linejoin="round" opacity="0.37" filter="url(#soft)"/>
+  <path d="${ARROW}" fill="#fff" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="${ARROW}" fill="rgb(18,18,20)"/>`;
+// The pointing hand (over links and anything with cursor: pointer) and the I-beam (over text fields), after macOS,
+// in the same units as the arrow; HOT is where each one's hotspot sits in its own drawing.
+const GLOVE = "M10.6 6a1.7 1.7 0 0 1 3.4 0v6.6a1.3 1.3 0 0 1 2.6 0v.7a1.3 1.3 0 0 1 2.6 0v.7a1.3 1.3 0 0 1 2.6 0V19c0 3.1-2 5.6-5 5.6h-2.6c-2 0-3.3-.9-4.4-2.4l-3.1-4.1c-.6-.9-.4-2 .5-2.5.8-.4 1.7-.2 2.3.5l1.1 1.4V6Z";
+const HAND = `<defs><filter id="soft2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.3"/></filter></defs>
+  <path d="${GLOVE}" transform="translate(0.3 0.9)" fill="#000" opacity="0.37" filter="url(#soft2)"/>
+  <path d="${GLOVE}" fill="#fff" stroke="rgb(18,18,20)" stroke-width="1.1" stroke-linejoin="round"/>
+  <path d="M14 12.6v3.6M16.6 13.3v3M19.2 14v2.6" stroke="rgb(18,18,20)" stroke-width="1" stroke-linecap="round"/>`;
+const BEAM = "M3 1H7M3 15H7M5 1V15";
+const IBEAM = `<path d="${BEAM}" stroke="#fff" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+  <path d="${BEAM}" stroke="rgb(18,18,20)" stroke-width="1" stroke-linecap="round" fill="none"/>`;
+// kind: [svg, viewBox, width, height, hotspot x, hotspot y], all in arrow units
+const SPRITES = [[CURSOR, "-5 -5 24 31", 24, 31, 5, 5], [HAND, "0 0 32 32", 32, 32, 12.3, 4.3], [IBEAM, "0 0 10 16", 11.5, 18.4, 5.75, 9.2]];
+
+function grain(W, H) {
+  // Fresh grain at the output size, on the screen rather than the scene, so it keeps its size at any zoom: even
+  // noise added to the wallpaper, the brighter half through one canvas and the darker half through the other.
+  const up = new ImageData(W, H), down = new ImageData(W, H);
+  for (let i = 0; i < W * H * 4; i += 4) {
+    const d = 5 * Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random());
+    const img = d > 0 ? up : down, v = Math.round(Math.abs(d));
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+    up.data[i + 3] = down.data[i + 3] = 255;
+  }
+  for (const [id, img] of [["up", up], ["down", down]]) {
+    const c = document.getElementById(id);
+    c.width = W; c.height = H;
+    c.getContext("2d").putImageData(img, 0, 0);
+  }
+}
+
+function window_(kind, vw, barCss) {
+  // The browser window's chrome, in the page's CSS pixels. Text sits in elements so long titles end in an ellipsis.
+  const s = [], t = [];
+  const lights = kind === "safari" ? 19 : 18;
+  [["#ff5f57", "#e2463f"], ["#febc2e", "#df9e20"], ["#28c840", "#1eaa32"]].forEach(([fill, edge], i) =>
+    s.push(`<circle cx="${20 + 20 * i}" cy="${lights}" r="5.75" fill="${fill}" stroke="${edge}" stroke-width="0.5"/>`));
+  if (kind === "safari") {
+    const pw = vw * 0.42;
+    s.unshift(`<rect width="${vw}" height="${barCss}" fill="rgb(236,236,236)"/>`);
+    s.push(`<rect y="${barCss - 0.6}" width="${vw}" height="0.6" fill="rgb(214,214,214)"/>`,
+           `<rect x="${(vw - pw) / 2}" y="7" width="${pw}" height="24" rx="6" fill="#fff"/>`);
+    t.push(`<div id="url" style="left: ${(vw - pw) / 2 + 25}px; width: ${pw - 50}px; top: 19px; font-size: 12.5px; color: rgb(70,70,70); text-align: center"></div>`);
+  } else {
+    s.unshift(`<rect width="${vw}" height="${barCss}" fill="rgb(222,226,231)"/>`);
+    // Tab strip: the one tab, its favicon (a globe), title and close, then a new-tab plus.
+    s.push(`<path d="M80 44V14a8 8 0 0 1 8-8h224a8 8 0 0 1 8 8v30Z" fill="#fff"/>`,
+           `<g fill="none" stroke="${GREY}"><circle cx="99" cy="21" r="6.4" stroke-width="1.2"/><ellipse cx="99" cy="21" rx="2" ry="6.5"/><path d="M92.5 21h13"/>`,
+           `<path d="M300 17l8 8M308 17l-8 8" stroke-width="1.3"/><path d="M334 21h12M340 15v12" stroke-width="1.4"/></g>`);
+    // Toolbar: back, forward (greyed out: nothing to go forward to), reload, the address box, the menu.
+    s.push(`<rect y="36" width="${vw}" height="${barCss - 36}" fill="#fff"/>`,
+           `<rect y="${barCss - 0.6}" width="${vw}" height="0.6" fill="rgb(218,220,224)"/>`,
+           `<g fill="none" stroke-width="1.6" stroke-linecap="round"><path d="M13 56h14M13 56l6-6M13 56l6 6" stroke="${GREY}"/>`,
+           `<path d="M45 56h14M59 56l-6-6M59 56l-6 6" stroke="rgb(190,192,196)"/>`,
+           `<path d="M88.9 53.2A5.7 5.7 0 1 1 84 50.3" stroke="${GREY}"/></g>`,
+           `<path d="M83.5 46.2L87.6 50L83.5 53.8Z" fill="${GREY}"/>`,
+           `<rect x="104" y="41" width="${vw - 148}" height="30" rx="15" fill="rgb(239,241,244)"/>`,
+           `<g stroke="${DIM}" stroke-width="1.3"><path d="M116 52.5h12M116 59.5h12"/>`,
+           `<circle cx="124" cy="52.5" r="2.2" fill="rgb(239,241,244)" stroke-width="1.2"/><circle cx="119" cy="59.5" r="2.2" fill="rgb(239,241,244)" stroke-width="1.2"/></g>`,
+           [50, 56, 62].map((y) => `<circle cx="${vw - 20.4}" cy="${y}" r="1.6" fill="${DIM}"/>`).join(""));
+    t.push(`<div id="title" style="left: 114px; top: 21px; max-width: 170px; font-size: 12px; color: rgb(31,31,31)"></div>`,
+           `<div id="url" style="left: 140px; top: 56px; max-width: ${vw - 200}px; font-size: 13.5px; color: rgb(31,31,31)"></div>`);
+  }
+  return `<svg width="${vw}" height="${barCss}" style="position: absolute">${s.join("")}</svg>${t.join("")}`;
+}
+
+window.setup = async (l) => {
+  L = l;
+  document.body.style.cssText += `width: ${l.W}px; height: ${l.H}px`;
+  if (!l.bare) {
+    // The wallpaper's colours only, smoothed; a margin past the frame keeps the blur from fading at the edges.
+    Object.assign(wall.style, { position: "absolute", left: "-80px", top: "-80px", width: `${l.W + 160}px`, height: `${l.H + 160}px`,
+      background: `url("${l.wallpaper}") center / cover`, filter: `blur(${l.W / 100}px)` });
+    Object.assign(shadow.style, { position: "absolute", left: `${l.left}px`, top: `${l.PAD + 16 * l.u}px`, width: `${l.cw}px`,
+      height: `${l.BAR + l.ch}px`, borderRadius: `${l.RADIUS}px`, background: "rgba(0,0,0,0.31)", filter: `blur(${28 * l.u}px)` });
+    grain(l.W, l.H);
+  } else {
+    up.remove(); down.remove();
+  }
+  Object.assign(card.style, { position: "absolute", left: `${l.left}px`, top: `${l.PAD}px`, width: `${l.cw}px`, height: `${l.BAR + l.ch}px`,
+    borderRadius: `${l.RADIUS}px`, overflow: "hidden", background: "#000" });
+  Object.assign(take.style, { position: "absolute", left: 0, top: `${l.BAR}px`, width: `${l.cw}px`, height: `${l.ch}px` });
+  if (l.kind) {
+    bar.innerHTML = window_(l.kind, l.vw, l.barCss);
+    Object.assign(bar.style, { width: `${l.vw}px`, height: `${l.barCss}px`, transform: `scale(${l.cw / l.vw}, ${l.BAR / l.barCss})` });
+  }
+  hand.innerHTML = SPRITES.map(([svg, box]) => `<svg class="cursor" viewBox="${box}">${svg}</svg>`.repeat(5)).join("");
+};
+
+const esc = (s) => s.replace(/[&<>]/g, (c) => `&${{ "&": "amp", "<": "lt", ">": "gt" }[c]};`);
+
+function address(url) {
+  const [host, ...rest] = url.replace(/^[a-z]+:\/\//, "").split("/");
+  const path = rest.length ? ("/" + rest.join("/")).replace(/\/$/, "") : "";
+  if (L.kind === "safari") {
+    const lock = url.startsWith("https") ? `<svg width="12" height="12" viewBox="0 0 12 12" style="vertical-align: -1px; margin-right: 5px">
+      <rect x="0" y="5" width="7" height="6" rx="1" fill="rgb(110,110,110)"/><path d="M1.2 5.5A2.3 3.25 0 0 1 5.8 5.5" fill="none" stroke="rgb(110,110,110)" stroke-width="1.3"/></svg>` : "";
+    return lock + esc(host + path);
+  }
+  return esc(host) + `<span style="color: ${GREY}">${esc(path)}</span>`;
+}
+
+window.draw = async (s) => {
+  if (s.frame !== shown.frame) {
+    take.src = s.frame;
+    await take.decode();
+  }
+  const [vx, vy, z] = s.view;
+  bg.style.transform = cam.style.transform = `scale(${z}) translate(${-vx}px, ${-vy}px)`;
+  if (L.kind && s.url !== shown.url) document.getElementById("url").innerHTML = address(s.url);
+  if (L.kind === "chrome" && s.title !== shown.title) document.getElementById("title").textContent = s.title || s.url.replace(/^[a-z]+:\/\//, "").split("/")[0];
+  // The pointer and rings are drawn on the screen, clipped to the card, so they stay crisp and blur along the camera's move too.
+  const [x0, y0, x1, y1, r] = s.clip;
+  over.style.clipPath = `inset(${y0}px ${L.W - x1}px ${L.H - y1}px ${x0}px round ${r}px)`;
+  // Each click sends out a ring that spreads and fades: dark on a white halo, so it reads on light and dark pages.
+  rings.innerHTML = s.rings.map(([x, y, rr, w, a]) => `<circle cx="${x}" cy="${y}" r="${rr - w / 2}" fill="none" stroke="rgba(255,255,255,${(140 / 255) * a})" stroke-width="${2 * w}"/>
+    <circle cx="${x}" cy="${y}" r="${rr - w / 2}" fill="none" stroke="rgba(30,30,30,${(160 / 255) * a})" stroke-width="${w}"/>`).join("");
+  // The pointer where it is at a few instants across the shutter, added at equal weight, so a fast move blurs along its
+  // path; each kind weighted by its share, so one kind cross-fades into the next.
+  [...hand.children].forEach((c, n) => {
+    const k = Math.floor(n / 5), p = s.spots[n % 5], [, , w, h, hx, hy] = SPRITES[k];
+    c.style.display = p && s.kinds[k] ? "" : "none";
+    if (p && s.kinds[k]) Object.assign(c.style, { left: `${p[0] - hx * s.unit}px`, top: `${p[1] - hy * s.unit}px`, width: `${w * s.unit}px`,
+                                                  height: `${h * s.unit}px`, opacity: s.kinds[k] / s.spots.length });
+  });
+  shown = s;
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+};
+</script>
+</body>

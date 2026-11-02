@@ -24,6 +24,9 @@ before you start.
 | one table of claims and the Jam that shows each | `jam-proof-table` |
 | a video file they already have turned into Jams | `video-to-jam` |
 | Jam set up for this agent: the CLI, sign-in, Jam MCP, the skills | `jam-setup` |
+| a polished, narrated demo video of a feature | `record-demo` |
+| a spoken voiceover on a video | `add-voiceover` |
+| a terminal run recorded as a GIF for the pull request | `record-terminal-proof` |
 
 Several asks in one request ("fix it and file a ticket"): run the skills in
 the order asked, and pass what the first one found to the next.

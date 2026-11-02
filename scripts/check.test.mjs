@@ -98,6 +98,19 @@ test("checks untracked CLI install blocks", (t) => {
   assert.match(result.output, /CLI install blocks differ/);
 });
 
+for (const [label, body, status] of [
+  ["one prose mention plus code", "**With Jam:** run `jam create jam`.\n\n```bash\njam create jam @p.json\n```\n", 0],
+  ["two prose mentions", "With Jam you get a Jam link.\n", 1],
+]) {
+  test(`unbranded skill with ${label}`, (t) => {
+    const repo = fixture(t);
+    repo.write(skillPath, `---\nname: sample-skill\ndescription: A useful skill.\n---\n${body}`);
+    const result = repo.run();
+    assert.equal(result.status, status, result.output);
+    if (status) assert.match(result.output, /mentions Jam 2 times/);
+  });
+}
+
 for (const [label, output, status, expected] of [
   ["listed skill", "│\n◇  Available Skills\n│\n│    \u001b[36msample-skill\u001b[39m\n│\n│      A useful skill.\n", 0, /✓/],
   ["path only", "⚠ Skipped skills/sample-skill/SKILL.md: YAML parse error\n", 1, /skills CLI did not list sample-skill/],

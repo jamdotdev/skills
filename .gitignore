@@ -4,3 +4,4 @@ tasks/
 mcp-registry-auth
 .mcpregistry_*
 node_modules/
+.env
