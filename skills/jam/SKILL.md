@@ -23,6 +23,7 @@ before you start.
 | a screenshot marked up and shared as a Jam | `jam-annotate` |
 | one table of claims and the Jam that shows each | `jam-proof-table` |
 | a video file they already have turned into Jams | `video-to-jam` |
+| Jam set up for this agent: the CLI, sign-in, Jam MCP, the skills | `jam-setup` |
 
 Several asks in one request ("fix it and file a ticket"): run the skills in
 the order asked, and pass what the first one found to the next.

@@ -51,10 +51,14 @@ You don't need to remember these names. Paste a Jam link, say what you want, and
 - [jam-annotate](./skills/jam-annotate/SKILL.md): "Mark what's broken and share it." Draws boxes, arrows and notes on a screenshot, blurs anything private, and shares it as a Jam.
 - [jam-proof-table](./skills/jam-proof-table/SKILL.md): "Give me the jams for each fix." After a batch of work, one table: each claim, whether it works, and the Jam that shows it.
 
+### Set up Jam
+
+- [jam-setup](./skills/jam-setup/SKILL.md): "Set up jam." Installs the Jam CLI, signs you in, connects Jam MCP, installs these skills and runs `jam doctor`, in that order. It asks once whether to set up this project or every project on your machine.
+
 ## Requirements
 
 - A free [Jam](https://jam.dev?utm_source=github&utm_medium=readme&utm_campaign=skills) account.
-- The [Jam CLI](https://jam.dev/cli). A skill signs in when it needs to. `jam`, `jam-fix` and `jam-to-e2e` can read a Jam through Jam MCP instead, the Model Context Protocol (MCP) server the plugin connects.
+- The [Jam CLI](https://jam.dev/cli). Say "set up jam" and `jam-setup` walks you through it. A skill signs in when it needs to. `jam`, `jam-fix` and `jam-to-e2e` can read a Jam through Jam MCP instead, the Model Context Protocol (MCP) server the plugin connects.
 - For `video-to-jam`: ffmpeg and a local transcriber such as Whisper.
 - In CI or a cloud agent: a [personal access token](https://jam.dev/docs/personal-access-tokens) in `JAM_TOKEN`.
 - For `jam-proof`: recording a web page needs only Chrome. Recording a window or the whole screen needs macOS or Linux (X11).
