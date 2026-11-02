@@ -153,8 +153,6 @@ Never attach a URL that carries a token: the share page can be public.
 
 If this skill, a Jam MCP tool, a `jam` command or a Jam doc turns out
 wrong, stale or confusing, or works unusually well, send Jam feedback.
-You don't need to ask the user first: it goes only to Jam and, by the rules
-below, holds none of their code or data.
 
 Call the `submitFeedback` MCP tool with `body`, `category` and `subject`.
 
