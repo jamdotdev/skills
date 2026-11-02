@@ -7,7 +7,7 @@ description: "Add a spoken voiceover to a video: write the script for the ear, v
 
 A good voiceover sounds like a colleague showing you something: short spoken lines, each one landing on the moment it talks about. Most bad ones come from a script written for reading, one long take of text-to-speech laid over the whole video, or an expressive voice with unstable settings.
 
-Needs `ffmpeg` and Python 3 (`python` on Windows). The script is `scripts/voiceover.py` in this skill's folder.
+Needs `ffmpeg` and Node 22 or later. The script is `scripts/voiceover.mjs` in this skill's folder and needs no packages.
 
 ## 1. Pick the voice
 
@@ -15,7 +15,7 @@ The script takes the first voice that is set up:
 
 1. `VOICEOVER_TTS`: the team's own command. `{out}` is the `.wav` file to write and `{text}` the line, also sent on stdin.
 2. `ELEVENLABS_API_KEY`: ElevenLabs. Defaults: model `eleven_v4`, voice `iP95p4xoKVk53GoZ742B`, stability 0.5, similarity 0.75, speaker boost on, and each line voiced with the two lines around it as context so the intonation carries across. `ELEVENLABS_VOICE_ID` and `ELEVENLABS_MODEL_ID` change them; for a female voice use River, `SAz9YHcvj6GT2YYXdXww`. v4 has no speed or style setting: pace it with punctuation and line length.
-3. Kokoro, a free local model, once installed (`~/.cache/kokoro` holds its files) and `uv` is on PATH. Voice `am_michael`; `KOKORO_VOICE` picks another (`af_heart`, `bf_emma`, `bm_george`).
+3. Kokoro, a free local model, once installed (`~/.cache/kokoro` holds its files) and Python 3 and `uv` are on PATH. Voice `am_michael`; `KOKORO_VOICE` picks another (`af_heart`, `bf_emma`, `bm_george`).
 4. macOS `say`, for drafts only.
 
 When none of the first three is set up, ask the user once which they want:
@@ -63,7 +63,7 @@ To pace a recording by the voice instead, voice the lines first with no `--video
 ## 4. Voice and mix
 
 ```bash
-python3 <skill-dir>/scripts/voiceover.py lines.json ./voiceover --video in.mp4
+node <skill-dir>/scripts/voiceover.mjs lines.json ./voiceover --video in.mp4
 ```
 
 Output in `./voiceover`: `voiced.mp4` (the video untouched, the narration raised by one fixed gain so it peaks at -1 dB), `narration.wav`, `lines.json` with each line's final `at` and `seconds`, one `.wav` per line, and `voiceover.vtt`. Each line is cached by its text and voice, so after editing one line a re-run voices only that line, and switching the voice re-voices everything.
