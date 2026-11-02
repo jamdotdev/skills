@@ -1,0 +1,4 @@
+interface:
+  display_name: "Jam Setup"
+  short_description: "Install the Jam CLI, sign in, connect Jam MCP and install the Jam skills"
+  default_prompt: "Use $jam-setup to set up Jam for this agent: CLI, sign-in, MCP, skills, then jam doctor."
