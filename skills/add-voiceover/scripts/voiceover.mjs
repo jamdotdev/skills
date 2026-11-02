@@ -146,7 +146,7 @@ if (video) {
   // One gain for the whole track, peaks at -1 dB. loudnorm and other dynamic levelers pump up each word's tail into an echo.
   const peak = run(FFMPEG, ["-i", narration, "-af", "volumedetect", "-f", "null", "-"], { ok: true }).stderr;
   const gain = -1 - parseFloat(peak.split("max_volume:")[1]);
-  // A video with its own sound keeps it, at its own level, under the narration, to the video's end however short it is.
+  // A video with its own sound keeps it under the narration, to the video's end however short it is.
   const sound = run(FFPROBE, ["-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=p=0", video]).stdout.trim();
   let voice = `[1:a]volume=${gain.toFixed(2)}dB,apad${sound ? "[n];[0:a][n]amix=inputs=2:normalize=0:duration=longest" : ""}[aout]`;
   if (sound) { // the two together can peak over 0 dB: one more fixed gain brings the mix back to -1 dB

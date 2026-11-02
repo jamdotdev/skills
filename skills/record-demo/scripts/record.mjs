@@ -41,16 +41,22 @@ mkdirSync(out, { recursive: true });
 // Every command is async: Chrome sends the next frame only once the last is acknowledged, so a blocking call drops frames.
 const execFileP = promisify(execFile);
 const shim = /\.(cmd|bat)$/i.test(AGENT); // a Windows .cmd shim only runs through the shell
+// However the player ends, the session closes: a retake starts from a fresh browser, not this take's leftovers.
+process.on("exit", () => spawnSync(shim ? `"${AGENT}"` : AGENT, [...AB, "close"], { shell: shim }));
+let fresh = true; // a retake right after a take can meet the last session still closing: its first command gets one retry
 async function ab(...a) {
-  try {
-    const argv = [...AB, ...a];
-    const { stdout } = shim
-      ? await execFileP(`"${AGENT}"`, argv.map((x) => `"${x.replaceAll('"', '""')}"`), { shell: true, maxBuffer: 1 << 26 })
-      : await execFileP(AGENT, argv, { maxBuffer: 1 << 26 });
-    return stdout;
-  } catch (e) {
-    spawnSync(shim ? `"${AGENT}"` : AGENT, [...AB, "close"], { shell: shim });
-    die(`agent-browser ${a.join(" ")} failed: ${e.stdout ?? ""}${e.stderr ?? e.message}`);
+  for (let retry = fresh; ; retry = false) {
+    try {
+      const argv = [...AB, ...a];
+      const { stdout } = shim
+        ? await execFileP(`"${AGENT}"`, argv.map((x) => `"${x.replaceAll('"', '""')}"`), { shell: true, maxBuffer: 1 << 26 })
+        : await execFileP(AGENT, argv, { maxBuffer: 1 << 26 });
+      fresh = false;
+      return stdout;
+    } catch (e) {
+      if (retry) { await sleep(1.5); continue; }
+      die(`agent-browser ${a.join(" ")} failed: ${e.stdout ?? ""}${e.stderr ?? e.message}`);
+    }
   }
 }
 
@@ -184,8 +190,9 @@ for (const [i, b] of beats.entries()) {
   shot = b.shot = b.shot ?? shot;
   const frame = shot === "wide" ? null : await on(shot, RECT);
   let left = null; // the shot as it was before a cut left the page or a scroll moved it
-  if (shot !== "wide" && b.do.slice(0, -1).some((c) => c[0] === "scrollto")) // one frame can't hold content that moves mid-beat
-    console.error(`warning: beat ${i + 1} scrolls before its end while framed; end the beat with scrollto and frame what it reveals in the next`);
+  const scrolled = b.do.findIndex((c) => c[0] === "scrollto"); // one frame can't hold content that moves mid-beat
+  if (shot !== "wide" && scrolled >= 0 && b.do.slice(scrolled + 1).some((c) => !["wait", "say"].includes(c[0])))
+    console.error(`warning: beat ${i + 1} acts after scrolling while framed; end the beat with scrollto and frame what it reveals in the next`);
   for (const [j, cmd] of b.do.entries()) {
     const last = !b.do.slice(j + 1).some(pointing); // a hand only steps aside once it's done for the beat
     const c0 = mono() - t0;
@@ -318,7 +325,6 @@ for (const [a, b] of busy) {
 }
 if (hold - reach > 3) console.error(`warning: nothing moves or speaks from ${reach.toFixed(1)} s to ${hold.toFixed(1)} s; cut the wait or give it a line`);
 ws.close();
-await ab("close");
 if (!frames.length) die("Chrome sent no frames; is the demo session's page open?");
 
 const uncut = (ts) => ts - cuts.reduce((s, [a, b]) => s + Math.min(b, Math.max(a, ts)) - a, 0); // a moment inside a cut lands where the cut does

@@ -194,7 +194,10 @@ const page = (await call("Target.getTargets")).targetInfos.find((t) => t.type ==
 const session = (await call("Target.attachToTarget", { targetId: page.targetId, flatten: true })).sessionId;
 async function run(expression) {
   const r = await call("Runtime.evaluate", { expression, awaitPromise: true }, session);
-  if (r.exceptionDetails) die(`polish.html: ${r.exceptionDetails.exception?.description ?? r.exceptionDetails.text}`);
+  if (r.exceptionDetails) {
+    rmSync(join(out, "polished.mp4"), { force: true }); // not a cut-short video that looks finished
+    die(`polish.html: ${r.exceptionDetails.exception?.description ?? r.exceptionDetails.text}`);
+  }
 }
 await run(`setup(${JSON.stringify({ W, H, PAD, RADIUS, BAR, barCss, cw, ch, left, u, kind, vw, bare,
                                     wallpaper: bare ? "" : pathToFileURL(resolve(wallpaper)).href })})`);
@@ -203,9 +206,11 @@ const polished = join(out, "polished.mp4");
 const enc = spawn(FFMPEG, ["-v", "error", "-y", "-f", "image2pipe", "-framerate", String(FPS), "-i", "-",
                            "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "faststart", polished],
                   { stdio: ["pipe", "inherit", "inherit"] });
+enc.stdin.on("error", () => {}); // ffmpeg gone: its exit code below says so
 const total = Math.floor(duration * FPS);
 console.error(`filming ${total} frames`);
 for (let n = 0; n < total; n++) {
+  if (enc.exitCode !== null) break; // ffmpeg stopped: no drain will come
   const t = n / FPS;
   await run(`draw(${JSON.stringify(frameState(t, frameAt(t)))})`);
   const { data } = await call("Page.captureScreenshot", { format: "jpeg", quality: 95, optimizeForSpeed: true }, session);

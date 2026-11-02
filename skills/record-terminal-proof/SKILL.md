@@ -36,7 +36,7 @@ step npm test -- users.spec.ts
 ## Record
 
 ```bash
-asciinema rec --quiet --overwrite --return --window-size 100x30 --command "./demo.sh" proof.cast
+asciinema rec --quiet --overwrite --return --window-size 100x30 --command "bash ./demo.sh" proof.cast
 ```
 
 With no TTY (an agent's shell), asciinema switches to headless mode by itself. A 15 s script gives a cast of about 1 KB. The cast is plain JSON lines, so keep it when someone needs the exact text.

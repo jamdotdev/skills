@@ -66,7 +66,7 @@ To pace a recording by the voice instead, voice the lines first with no `--video
 node <skill-dir>/scripts/voiceover.mjs lines.json ./voiceover --video in.mp4
 ```
 
-Output in `./voiceover`: `voiced.mp4` (the video untouched, the narration raised by one fixed gain so it peaks at -1 dB), `narration.wav`, `lines.json` with each line's final `at` and `seconds`, one `.wav` per line, and `voiceover.vtt`. Each line is cached by its text and voice, so after editing one line a re-run voices only that line, and switching the voice re-voices everything.
+Output in `./voiceover`: `voiced.mp4` (the picture untouched, the narration raised by one fixed gain so it peaks at -1 dB; a video with its own sound keeps it, and both are lowered together if the mix would pass -1 dB), `narration.wav`, `lines.json` with each line's final `at` and `seconds`, one `.wav` per line, and `voiceover.vtt`. Each line is cached by its text and voice, so after editing one line a re-run voices only that line (with ElevenLabs, also the two on each side, which it hears as context), and switching the voice re-voices everything.
 
 A line that would talk over the one before starts late, and the script prints which. Shorten one of the two lines, or move the later one, and run it again.
 
