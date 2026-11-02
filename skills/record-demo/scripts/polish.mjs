@@ -178,14 +178,14 @@ const AGENT = tool("agent-browser");
 const shim = /\.(cmd|bat)$/i.test(AGENT), q = (x) => `"${x.replaceAll('"', '""')}"`; // a Windows .cmd shim only runs through the shell, quoted
 const ab = (...a) => (shim ? execFileSync(q(AGENT), ["--session", "polish", ...a].map(q), { encoding: "utf8", shell: true })
                            : execFileSync(AGENT, ["--session", "polish", ...a], { encoding: "utf8" }));
-// The video is written as polished.part.mp4 and renamed only once it is complete, so a run that stops early never
-// touches the last good polished.mp4. However polish ends, Ctrl-C or a timeout included, its Chrome closes and its
-// frames and part file go.
-const polished = join(out, "polished.mp4"), part = join(out, "polished.part.mp4");
+// The video and poster are written as part files and renamed only once both are complete, so a run that stops early
+// never touches the last good polished.mp4 or its poster.png. However polish ends, Ctrl-C or a timeout included, its
+// Chrome closes and its frames and part files go.
+const polished = join(out, "polished.mp4"), part = join(out, "polished.part.mp4"), poster = join(out, "poster.part.png");
 process.on("exit", () => {
   try { ab("close"); } catch {} // a session already gone is fine
   enc?.kill();
-  for (const p of [part, frames]) try { rmSync(p, { recursive: true, force: true }); } catch {}
+  for (const p of [part, poster, frames]) try { rmSync(p, { recursive: true, force: true }); } catch {}
 });
 for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => process.exit(130));
 let enc, closed; // the encoder, and its exit, watched from the start so an early one is never missed
@@ -234,11 +234,12 @@ for (let n = 0; n < total; n++) {
 const pb = tl.beats.findIndex((b) => b.poster) >= 0 ? tl.beats.findIndex((b) => b.poster) : tl.beats.length - 1;
 const tp = (tl.beats[pb + 1]?.at ?? duration) - 0.4;
 await run(`draw(${JSON.stringify(frameState(tp, frameAt(tp)))})`);
-writeFileSync(join(out, "poster.png"), Buffer.from((await call("Page.captureScreenshot", { format: "png" }, session)).data, "base64"));
+writeFileSync(poster, Buffer.from((await call("Page.captureScreenshot", { format: "png" }, session)).data, "base64"));
 enc.stdin.end();
 await closed;
 ws.close();
 rmSync(frames, { recursive: true });
 if (enc.exitCode !== 0) die("ffmpeg failed to encode the polished video");
 renameSync(part, polished);
+renameSync(poster, join(out, "poster.png")); // the poster changes with the video it belongs to, never without it
 console.log(polished);
