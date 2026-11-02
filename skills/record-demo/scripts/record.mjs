@@ -68,6 +68,11 @@ const r1 = (v) => Math.round(v * 10) / 10, r3 = (v) => Math.round(v * 1000) / 10
 
 let t0, wall0;
 const pointer = [640, 520], moves = [], presses = [];
+const busy = []; // [from, to] spans where something moves or speaks, to find dead air
+
+// The element the hand is over, as a box and the cursor the page asks for there: polish.mjs switches to it as the
+// pointer crosses the box's edge. A move that leaves the box keeps it, so the switch back happens on the way out.
+let target = {};
 
 async function move(x, y, ms) {
   // polish.mjs draws this move with its own bend; the real pointer only has to get there on the same schedule.
@@ -76,16 +81,23 @@ async function move(x, y, ms) {
   await ab("mouse", "move", String(Math.round(x)), String(Math.round(y)), "--human", "--duration", String(Math.round(ms)), "--steps", String(Math.max(2, Math.round(ms / 16))));
   await sleep(t + ms / 1000 - (mono() - t0));
   moves.push({ t0: t, t1: mono() - t0, from: pointer.map(r1), to: [r1(x), r1(y)],
-               bend: r3(uniform(0.06, 0.14) * (Math.random() < 0.5 ? -1 : 1)) });
+               bend: r3(uniform(0.06, 0.14) * (Math.random() < 0.5 ? -1 : 1)), ...target });
+  busy.push([t, mono() - t0]);
   pointer.splice(0, 2, x, y);
 }
 
 async function glide(sel) {
-  // A hand lands somewhere inside the target, rarely its centre, in one movement: farther takes longer, and it
-  // rests a beat before pressing.
-  const [bx, by, bw, bh] = await on(sel, "el.scrollIntoView({block: 'nearest'}); const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height];");
-  const x = bx + bw * clamp(gauss(0.5, 0.13), 0.2, 0.8);
-  const y = by + bh * clamp(gauss(0.5, 0.1), 0.3, 0.7);
+  // A hand lands inside the target in one movement (farther takes longer) and rests a beat before pressing. It
+  // presses off the label, so the viewer can still read what was clicked: in the padding right of the text when
+  // there is room, else right of centre and a little low.
+  const ux = clamp(gauss(0.5, 0.15), 0.2, 0.8), fx = clamp(gauss(0.75, 0.06), 0.62, 0.88), fy = clamp(gauss(0.6, 0.06), 0.45, 0.72);
+  const [x, y, bx, by, bw, bh, kind] = await on(sel, `el.scrollIntoView({block: 'nearest'}); const r = el.getBoundingClientRect();
+    const range = document.createRange(); range.selectNodeContents(el); const tr = range.getBoundingClientRect();
+    const room = r.right - tr.right, x = tr.width && room >= 12 ? tr.right + room * ${ux} : r.x + r.width * ${fx}, y = r.y + r.height * ${fy};
+    const at = document.elementFromPoint(x, y) || el, c = getComputedStyle(at).cursor;
+    const field = at.isContentEditable || at.tagName === 'TEXTAREA' || (at.tagName === 'INPUT' && /^(text|search|email|url|tel|password|number|)$/.test(at.type));
+    return [x, y, r.x, r.y, r.width, r.height, c === 'pointer' ? 'hand' : c === 'text' || (c === 'auto' && field) ? 'ibeam' : 'arrow'];`);
+  target = { box: [bx, by, bx + bw, by + bh].map(r1), kind }; // ponytail: the box as it was before the press; a page that reflows after it switches late
   const reach = Math.hypot(x - pointer[0], y - pointer[1]);
   await move(x, y, Math.min(1300, 450 + 0.9 * reach) * uniform(0.85, 1.2));
   await sleep(uniform(0.18, 0.35));
@@ -167,10 +179,12 @@ for (const [i, b] of beats.entries()) {
   let left = null; // the shot as it was when a cut left the page
   for (const [j, cmd] of b.do.entries()) {
     const last = !b.do.slice(j + 1).some(pointing); // a hand only steps aside once it's done for the beat
+    const c0 = mono() - t0;
     if (cmd[0] === "say") {
       await sleep(talking + GAP - (mono() - t0));
       lines.push({ at: mono() - t0, say: cmd[1] });
       talking = lines.at(-1).at + length(cmd[1]);
+      busy.push([lines.at(-1).at, talking]);
     } else if (cmd[0] === "scrollto") {
       // Eased like a hand on a trackpad, farther takes longer, leaving the target a fifth of the way down the
       // viewport. The browser's own smooth scroll is too quick to follow on video.
@@ -180,6 +194,7 @@ for (const [i, b] of beats.entries()) {
           scrollTo({top: y0 + d * (p < 0.5 ? 4 * p ** 3 : 1 - (2 - 2 * p) ** 3 / 2), behavior: 'instant'}); if (p < 1) requestAnimationFrame(f); };
         requestAnimationFrame(f); return ms;`);
       await sleep(ms / 1000 + 0.2);
+      busy.push([c0, mono() - t0]);
     } else if (cmd[0] === "cut") { // a wait nobody needs to watch, like a page loading, is cut from the take
       if (cmd[1] === "open") { // leaving the page: the line finishes and the camera measures its shot first
         await sleep(talking + 0.3 - (mono() - t0));
@@ -208,14 +223,19 @@ for (const [i, b] of beats.entries()) {
         text = (await promisify(exec)(text.slice(2))).stdout.trim().split("\n").at(-1).trim();
         cut(c0);
       }
+      const k0 = mono() - t0;
       for (const ch of text) {
         await ab("keyboard", "type", ch);
         await sleep(uniform(0.07, 0.16));
       }
+      busy.push([k0, mono() - t0]);
       await sleep(SETTLE);
     } else {
       await ab(...cmd);
-      if (["click", "press", "dblclick"].includes(cmd[0])) await sleep(SETTLE);
+      if (["click", "press", "dblclick"].includes(cmd[0])) {
+        busy.push([c0, c0 + SETTLE]); // the page answers the press
+        await sleep(SETTLE);
+      }
     }
   }
   await sleep(talking + 1 - (mono() - t0)); // let the result sit before the next beat
@@ -226,8 +246,17 @@ for (const [i, b] of beats.entries()) {
   }
   b.said = lines.find((l) => l.at >= b.at)?.at ?? b.at;
 }
-await sleep(1.5); // hold the last frame so the end does not cut mid-thought
+const hold = mono() - t0;
+await sleep(2); // the payoff holds two seconds, so the end does not cut mid-thought
 let end = Date.now() / 1000;
+// Nothing on screen should sit still and silent for more than 3 s; the opening look and the final hold are meant to.
+busy.sort((a, b) => a[0] - b[0]);
+let reach = 1.2;
+for (const [a, b] of busy) {
+  if (a - reach > 3) console.error(`warning: nothing moves or speaks from ${reach.toFixed(1)} s to ${a.toFixed(1)} s; cut the wait or give it a line`);
+  reach = Math.max(reach, b);
+}
+if (hold - reach > 3) console.error(`warning: nothing moves or speaks from ${reach.toFixed(1)} s to ${hold.toFixed(1)} s; cut the wait or give it a line`);
 ws.close();
 await ab("close");
 if (!frames.length) die("Chrome sent no frames; is the demo session's page open?");
@@ -270,7 +299,7 @@ rmSync(shots, { recursive: true });
 for (const x of [...beats, ...lines, ...presses]) x.at = r3(x.at);
 for (const b of beats) b.said = r3(b.said);
 for (const m of moves) { m.t0 = r3(m.t0); m.t1 = r3(m.t1); }
-const pick = (b) => Object.fromEntries(["at", "said", "shot", "frame"].filter((k) => k in b).map((k) => [k, b[k]]));
+const pick = (b) => Object.fromEntries(["at", "said", "shot", "frame", "poster"].filter((k) => k in b).map((k) => [k, b[k]]));
 writeFileSync(join(out, "narration.json"), JSON.stringify(lines, null, 1));
 writeFileSync(join(out, "timeline.json"), JSON.stringify({
   video, viewport: [1280, 720], pointer: [640, 520], beats: beats.map(pick), moves, presses,

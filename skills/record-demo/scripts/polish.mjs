@@ -4,13 +4,13 @@
 // wallpaper, at 2560x1440 and 60 fps.
 //
 // usage: node polish.mjs <out-dir> [--background <image> | --background none] [--frame safari|chrome]
-// Reads video.mp4 and timeline.json, writes polished.mp4. The wallpaper defaults to ../assets/wallpaper.png; none fills
+// Reads video.mp4 and timeline.json, writes polished.mp4 and poster.png. The wallpaper defaults to ../assets/wallpaper.png; none fills
 // the frame with the page edge to edge, with no card. --frame puts the page in a Safari or Chrome window whose address
 // bar (and Chrome's tab title) follows the page.
 // Each frame is laid out in polish.html and filmed in a headless Chrome through agent-browser, so nothing needs installing.
 // Timing is untouched, so narration.json still lines up with polished.mp4.
 import { execFileSync, spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { delimiter, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -64,6 +64,16 @@ function pointer(t) {
   }
   return at;
 }
+
+// The cursor's kind: what the page asks for over the box the hand last went for, while the pointer is inside it.
+function kindAt(t) {
+  const m = tl.moves.findLast((m) => m.t0 <= t);
+  if (!m?.box) return "arrow";
+  const [x, y] = pointer(t), [x0, y0, x1, y1] = m.box;
+  return x >= x0 && x <= x1 && y >= y0 && y <= y1 ? m.kind : "arrow";
+}
+const KINDS = ["arrow", "hand", "ibeam"];
+const MORPH = 0.1; // seconds one kind takes to cross-fade into the next, so it morphs instead of popping
 
 function squash(t) { // the cursor dips on a press and springs back
   const d = tl.presses.map((p) => t - p.at).find((d) => d >= -0.05 && d <= 0.25);
@@ -144,7 +154,9 @@ function frameState(t, frame) {
   });
   let spots = [0, 1, 2, 3, 4].map((i) => t + (SHUTTER / FPS) * (i / 4 - 0.5)).map((ts) => onScreen(ts, ...pointer(ts)));
   if (Math.hypot(spots[0][0] - spots[4][0], spots[0][1] - spots[4][1]) < 1.5) spots = [spots[2]];
-  return { frame, view: [vx, vy, z], clip: [x0, wy, x1, y1, RADIUS * z], rings, spots,
+  const near = [0, 1, 2, 3, 4].map((i) => kindAt(t + MORPH * (i / 4 - 0.5)));
+  const kinds = KINDS.map((k) => near.filter((n) => n === k).length / near.length);
+  return { frame, view: [vx, vy, z], clip: [x0, wy, x1, y1, RADIUS * z], rings, spots, kinds,
            unit: (CURSOR * css * z * squash(t)) / 21, url: latest("url", t), title: latest("title", t) };
 }
 
@@ -191,6 +203,12 @@ for (let n = 0; n < total; n++) {
   const { data } = await call("Page.captureScreenshot", { format: "jpeg", quality: 95, optimizeForSpeed: true }, session);
   if (!enc.stdin.write(Buffer.from(data, "base64"))) await new Promise((r) => enc.stdin.once("drain", r));
 }
+// The poster: the frame most people see first, as a thumbnail or a still in a PR. The end of the beat marked
+// "poster" (the last by default), where its result has settled and the pointer has stepped aside.
+const pb = tl.beats.findIndex((b) => b.poster) >= 0 ? tl.beats.findIndex((b) => b.poster) : tl.beats.length - 1;
+const tp = (tl.beats[pb + 1]?.at ?? duration) - 0.4;
+await run(`draw(${JSON.stringify(frameState(tp, frameUrl(Math.min(count - 1, Math.floor(tp * srcFps)))))})`);
+writeFileSync(join(out, "poster.png"), Buffer.from((await call("Page.captureScreenshot", { format: "png" }, session)).data, "base64"));
 enc.stdin.end();
 await new Promise((r) => enc.on("close", r));
 ws.close();

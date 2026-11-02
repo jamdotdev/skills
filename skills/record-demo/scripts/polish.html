@@ -27,6 +27,18 @@ const CURSOR = `<defs><filter id="soft" x="-50%" y="-50%" width="200%" height="2
   <path d="${ARROW}" transform="translate(0.3 0.9)" fill="#000" stroke="#000" stroke-width="2.5" stroke-linejoin="round" opacity="0.37" filter="url(#soft)"/>
   <path d="${ARROW}" fill="#fff" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>
   <path d="${ARROW}" fill="rgb(18,18,20)"/>`;
+// The pointing hand (over links and anything with cursor: pointer) and the I-beam (over text fields), after macOS,
+// in the same units as the arrow; HOT is where each one's hotspot sits in its own drawing.
+const GLOVE = "M10.6 6a1.7 1.7 0 0 1 3.4 0v6.6a1.3 1.3 0 0 1 2.6 0v.7a1.3 1.3 0 0 1 2.6 0v.7a1.3 1.3 0 0 1 2.6 0V19c0 3.1-2 5.6-5 5.6h-2.6c-2 0-3.3-.9-4.4-2.4l-3.1-4.1c-.6-.9-.4-2 .5-2.5.8-.4 1.7-.2 2.3.5l1.1 1.4V6Z";
+const HAND = `<defs><filter id="soft2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.3"/></filter></defs>
+  <path d="${GLOVE}" transform="translate(0.3 0.9)" fill="#000" opacity="0.37" filter="url(#soft2)"/>
+  <path d="${GLOVE}" fill="#fff" stroke="rgb(18,18,20)" stroke-width="1.1" stroke-linejoin="round"/>
+  <path d="M14 12.6v3.6M16.6 13.3v3M19.2 14v2.6" stroke="rgb(18,18,20)" stroke-width="1" stroke-linecap="round"/>`;
+const BEAM = "M3 1H7M3 15H7M5 1V15";
+const IBEAM = `<path d="${BEAM}" stroke="#fff" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+  <path d="${BEAM}" stroke="rgb(18,18,20)" stroke-width="1" stroke-linecap="round" fill="none"/>`;
+// kind: [svg, viewBox, width, height, hotspot x, hotspot y], all in arrow units
+const SPRITES = [[CURSOR, "-5 -5 24 31", 24, 31, 5, 5], [HAND, "0 0 32 32", 32, 32, 12.3, 4.3], [IBEAM, "0 0 10 16", 11.5, 18.4, 5.75, 9.2]];
 
 function grain(W, H) {
   // Fresh grain at the output size, on the screen rather than the scene, so it keeps its size at any zoom: even
@@ -100,7 +112,7 @@ window.setup = async (l) => {
     bar.innerHTML = window_(l.kind, l.vw, l.barCss);
     Object.assign(bar.style, { width: `${l.vw}px`, height: `${l.barCss}px`, transform: `scale(${l.cw / l.vw}, ${l.BAR / l.barCss})` });
   }
-  hand.innerHTML = `<svg class="cursor" viewBox="-5 -5 24 31">${CURSOR}</svg>`.repeat(5);
+  hand.innerHTML = SPRITES.map(([svg, box]) => `<svg class="cursor" viewBox="${box}">${svg}</svg>`.repeat(5)).join("");
 };
 
 const esc = (s) => s.replace(/[&<>]/g, (c) => `&${{ "&": "amp", "<": "lt", ">": "gt" }[c]};`);
@@ -131,12 +143,13 @@ window.draw = async (s) => {
   // Each click sends out a ring that spreads and fades: dark on a white halo, so it reads on light and dark pages.
   rings.innerHTML = s.rings.map(([x, y, rr, w, a]) => `<circle cx="${x}" cy="${y}" r="${rr - w / 2}" fill="none" stroke="rgba(255,255,255,${(140 / 255) * a})" stroke-width="${2 * w}"/>
     <circle cx="${x}" cy="${y}" r="${rr - w / 2}" fill="none" stroke="rgba(30,30,30,${(160 / 255) * a})" stroke-width="${w}"/>`).join("");
-  // The pointer where it is at a few instants across the shutter, added at equal weight, so a fast move blurs along its path.
-  [...hand.children].forEach((c, i) => {
-    const p = s.spots[i];
-    c.style.display = p ? "" : "none";
-    if (p) Object.assign(c.style, { left: `${p[0] - 5 * s.unit}px`, top: `${p[1] - 5 * s.unit}px`, width: `${24 * s.unit}px`,
-                                    height: `${31 * s.unit}px`, opacity: 1 / s.spots.length });
+  // The pointer where it is at a few instants across the shutter, added at equal weight, so a fast move blurs along its
+  // path; each kind weighted by its share, so one kind cross-fades into the next.
+  [...hand.children].forEach((c, n) => {
+    const k = Math.floor(n / 5), p = s.spots[n % 5], [, , w, h, hx, hy] = SPRITES[k];
+    c.style.display = p && s.kinds[k] ? "" : "none";
+    if (p && s.kinds[k]) Object.assign(c.style, { left: `${p[0] - hx * s.unit}px`, top: `${p[1] - hy * s.unit}px`, width: `${w * s.unit}px`,
+                                                  height: `${h * s.unit}px`, opacity: s.kinds[k] / s.spots.length });
   });
   shown = s;
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
