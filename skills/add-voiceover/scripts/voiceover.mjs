@@ -150,9 +150,10 @@ if (video) {
   const sound = run(FFPROBE, ["-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=p=0", video]).stdout.trim();
   let voice = `[1:a]volume=${gain.toFixed(2)}dB,apad${sound ? "[n];[0:a][n]amix=inputs=2:normalize=0:duration=longest" : ""}[aout]`;
   if (sound) { // the two together can peak over 0 dB: one more fixed gain brings the mix back to -1 dB
-    const both = run(FFMPEG, ["-i", video, "-i", narration, "-filter_complex", voice.replace("[aout]", ",volumedetect[aout]"),
+    // astats reads the float mix; volumedetect converts to 16-bit first and never reports a peak over 0 dB.
+    const both = run(FFMPEG, ["-i", video, "-i", narration, "-filter_complex", voice.replace("[aout]", ",aformat=sample_fmts=flt,astats=measure_perchannel=none[aout]"),
                               "-map", "[aout]", "-t", String(length), "-f", "null", "-"], { ok: true }).stderr;
-    const over = parseFloat(both.split("max_volume:")[1]) + 1;
+    const over = parseFloat(both.split("Peak level dB:").at(-1)) + 1;
     if (over > 0) voice = voice.replace("[aout]", `,volume=${(-over).toFixed(2)}dB[aout]`);
   }
   run(FFMPEG, ["-v", "error", "-y", "-i", video, "-i", narration, "-filter_complex", voice,

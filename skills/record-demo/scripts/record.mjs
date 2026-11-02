@@ -31,7 +31,7 @@ const AB = ["--session", "demo", "--args", `--force-device-scale-factor=${SCALE}
 const FFMPEG = tool("ffmpeg");
 const args = process.argv.slice(2);
 const vi = args.indexOf("--voice");
-const voiced = {}; // each line's lengths, in order: the same words can be voiced twice, at two lengths
+const voiced = Object.create(null); // each line's lengths, in order: the same words can be voiced twice, at two lengths
 for (const l of vi >= 0 ? JSON.parse(readFileSync(args.splice(vi, 2)[1], "utf8")) : []) (voiced[l.say] ??= []).push(l.seconds);
 const [beatsFile, url, out] = args;
 if (!out) die("usage: node record.mjs <beats.json> <url> <out-dir> [--voice <lines.json>]");
