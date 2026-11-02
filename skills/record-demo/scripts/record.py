@@ -95,7 +95,8 @@ def film(stop, shots, frames, urls, titles):
         urls.append((0.0, main["url"]))
         titles.append((0.0, page["title"]))
         call(4, "Page.enable", {}, session)
-        call(5, "Page.startScreencast", {"format": "jpeg", "quality": 95, "maxWidth": 1280 * SCALE, "maxHeight": 720 * SCALE}, session)
+        # Quality 80 looks the same as 95 at 1:1 but keeps up with Chrome at about 55 fps; 95 drops to about 43, unevenly.
+        call(5, "Page.startScreencast", {"format": "jpeg", "quality": 80, "maxWidth": 1280 * SCALE, "maxHeight": 720 * SCALE}, session)
         call(6, "Target.setDiscoverTargets", {"discover": True})  # title changes arrive as target updates
         n = 6
         while not stop.is_set():
@@ -144,6 +145,7 @@ for i, b in enumerate(beats):
     b["at"] = time.monotonic() - t0
     shot = b["shot"] = b.get("shot", shot)
     frame = None if shot == "wide" else on(shot, RECT)
+    left = None  # the shot as it was when a cut left the page
     for j, cmd in enumerate(b["do"]):
         last = not any(POINTING(c) for c in b["do"][j + 1:])  # a hand only steps aside once it's done for the beat
         if cmd[0] == "say":
@@ -151,10 +153,19 @@ for i, b in enumerate(beats):
             lines.append({"at": time.monotonic() - t0, "say": cmd[1]})
             talking = lines[-1]["at"] + length(cmd[1])
         elif cmd[0] == "scrollto":
-            # Smooth, leaving the target a fifth of the way down the viewport.
-            on(cmd[1], "scrollTo({top: el.getBoundingClientRect().top + scrollY - innerHeight / 5, behavior: 'smooth'}); return 0;")
-            time.sleep(0.9)
+            # Eased like a hand on a trackpad, farther takes longer, leaving the target a fifth of the way down the
+            # viewport. The browser's own smooth scroll is too quick to follow on video.
+            ms = on(cmd[1], """const y0 = scrollY, d = Math.min(el.getBoundingClientRect().top - innerHeight / 5,
+                document.scrollingElement.scrollHeight - innerHeight - y0), ms = Math.min(4000, 1000 + 0.8 * Math.abs(d)), t = performance.now();
+              const f = now => { const p = Math.min(1, (now - t) / ms);
+                scrollTo({top: y0 + d * (p < 0.5 ? 4 * p ** 3 : 1 - (2 - 2 * p) ** 3 / 2), behavior: 'instant'}); if (p < 1) requestAnimationFrame(f); };
+              requestAnimationFrame(f); return ms;""")
+            time.sleep(ms / 1000 + 0.2)
         elif cmd[0] == "cut":  # a wait nobody needs to watch, like a page loading, is cut from the take
+            if cmd[1] == "open":  # leaving the page: the line finishes and the camera measures its shot first
+                time.sleep(max(0.0, talking + 0.3 - (time.monotonic() - t0)))
+                if shot != "wide" and left is None:
+                    left = on(shot, RECT)
             c0 = time.time()
             ab(*cmd[1:])
             cuts.append((c0, time.time()))
@@ -188,7 +199,7 @@ for i, b in enumerate(beats):
                 time.sleep(SETTLE)
     time.sleep(max(0.0, talking + 1.0 - (time.monotonic() - t0)))  # let the result sit before the next beat
     if shot != "wide":  # the camera frames the region as it was at the start and the end, so a growing list stays in shot
-        seen = [r for r in (frame, on(shot, RECT)) if r] or sys.exit(f"beat {i + 1}: shot {shot} matches nothing on the page")
+        seen = [r for r in (frame, left or on(shot, RECT)) if r] or sys.exit(f"beat {i + 1}: shot {shot} matches nothing on the page")
         b["frame"] = [min(r[0] for r in seen), min(r[1] for r in seen), max(r[2] for r in seen), max(r[3] for r in seen)]
     b["said"] = next((l["at"] for l in lines if l["at"] >= b["at"]), b["at"])
 time.sleep(1.5)  # hold the last frame so the end does not cut mid-thought
@@ -200,7 +211,7 @@ if not frames:
     sys.exit("Chrome sent no frames; is the demo session's page open?")
 
 def uncut(ts):
-    return ts - sum(b - a for a, b in cuts if b <= ts)
+    return ts - sum(min(b, max(a, ts)) - a for a, b in cuts)  # a moment inside a cut lands where the cut does
 # A cut keeps the last frame painted inside it, shown from where the cut lands, since a page that has settled sends no more.
 inside = {max((i for i, (ts, _) in enumerate(frames) if a < ts < b), default=None): b for a, b in cuts
           if not any(b <= ts < b + 0.2 for ts, _ in frames)}
@@ -219,10 +230,15 @@ for ts, p in frames[first:]:
     else:
         held.append((ts, p))
 held.append((end, held[-1][1]))
-(shots / "list.txt").write_text("".join(f"file '{a[1].name}'\nduration {b[0] - a[0]:.4f}\n" for a, b in zip(held, held[1:]))
-                                + f"file '{held[-1][1].name}'\n", encoding="utf-8")
+# Each image needs a fine timebase: by default ffmpeg reads one at 25 fps and rounds every frame's time to 40 ms.
+fine = "option framerate 1000\n"
+(shots / "list.txt").write_text("".join(f"file '{a[1].name}'\n{fine}duration {b[0] - a[0]:.4f}\n" for a, b in zip(held, held[1:]))
+                                + f"file '{held[-1][1].name}'\n{fine}", encoding="utf-8")
 video = out / "video.mp4"
-subprocess.run([FFMPEG, "-v", "error", "-y", "-f", "concat", "-i", str(shots / "list.txt"), "-vf", "fps=60",
+# Chrome sends 3x frames as fast as it can encode them, 35 to 55 a second and unevenly; an even 30 reads smoother
+# than a page that moves on frames 1, 2 and 5. polish.py still draws the camera and pointer at 60. "option" lines
+# above need -safe 0.
+subprocess.run([FFMPEG, "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(shots / "list.txt"), "-vf", "fps=30",
                 "-t", f"{end - held[0][0]:.3f}", "-c:v", "libx264",  # without -t, fps holds the last frame as long as the gap before it
                 "-preset", "fast", "-crf", "12", "-pix_fmt", "yuv420p", str(video)], check=True)
 shutil.rmtree(shots)
@@ -235,6 +251,6 @@ for m in moves:
 (out / "narration.json").write_text(json.dumps(lines, indent=1), encoding="utf-8")
 (out / "timeline.json").write_text(json.dumps({"video": str(video), "viewport": [1280, 720], "pointer": [640, 520],
     "beats": [{k: b[k] for k in ("at", "said", "shot", "frame") if k in b} for b in beats], "moves": moves, "presses": presses,
-    "urls": [{"at": round(max(0.0, ts - wall0), 3), "url": u} for ts, u in urls],
-    "titles": [{"at": round(max(0.0, ts - wall0), 3), "title": u} for ts, u in titles]}, indent=1), encoding="utf-8")
+    "urls": [{"at": round(max(0.0, uncut(ts) - wall0), 3), "url": u} for ts, u in urls],
+    "titles": [{"at": round(max(0.0, uncut(ts) - wall0), 3), "title": u} for ts, u in titles]}, indent=1), encoding="utf-8")
 print(video)
