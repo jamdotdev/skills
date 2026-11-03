@@ -5,10 +5,10 @@ Guidance for coding agents working in this repository. Humans: see [CONTRIBUTING
 ## Layout
 
 - `skills/<name>/SKILL.md`: the skills. Each folder also has `agents/openai.yaml`.
-- `.claude-plugin/`, `.codex-plugin/`, `.cursor-plugin/`, `gemini-extension.json`: plugin manifests. `mcp.json` is the shared MCP server entry.
-- `server.json`: the MCP Registry entry `dev.jam/jam`. Its `version` is the Jam MCP server's, not the plugin's. Pushing an `mcp-v*` tag publishes it, and a published version is permanent. Never push a tag unless asked.
+- `.claude-plugin/`, `.codex-plugin/`, `.cursor-plugin/`, `gemini-extension.json`: plugin manifests. `mcp.json` is the shared MCP server entry; `.mcp.json` is the Codex/OpenAI copy of it.
+- `server.json`: the MCP Registry entry `dev.jam/jam`. Its `version` is the Jam MCP server's. `.codex-plugin/plugin.json` tracks that version; the other plugin manifests do not. Pushing an `mcp-v*` tag publishes it, and a published version is permanent. Never push a tag unless asked.
 - `rules/`: a Cursor rule that guards the Jam MCP delete tools.
-- `scripts/package-chatgpt.mjs`: the ChatGPT directory package. A skill that reads a Jam over MCP alone goes into its `SKILLS` list.
+- `scripts/package-chatgpt.mjs`: the ChatGPT directory package. A skill that reads a Jam over MCP alone goes into its `SKILLS` list (`jam`, `jam-fix`, `jam-to-e2e`, `jam-to-tasks`, `jam-to-ticket`).
 - `docs/plugin.md`: plugin sign-in, what the MCP server can do, permissions. The tool list itself lives at jam.dev/mcp; do not copy it here.
 - `scripts/check.mjs`: repo checks, run by CI.
 

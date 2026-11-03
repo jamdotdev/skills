@@ -6,6 +6,7 @@ import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { parseArgs, stripVTControlCharacters } from "node:util";
 import { isMap, parseDocument } from "yaml";
+import { SHORT_DESCRIPTION_MAX } from "./package-chatgpt.mjs";
 
 const errors = [];
 const fail = (msg) => errors.push(msg);
@@ -81,10 +82,10 @@ if (new Set(setupBlocks.values()).size > 1) {
   fail(`CLI install blocks differ across ${[...setupBlocks.keys()].join(", ")}; make them identical`);
 }
 
-// Versions. server.json is not here: it carries the Jam MCP server's version, not the plugin's.
+// Claude, Cursor and Gemini share a plugin version. ChatGPT/Codex tracks the
+// Jam MCP server in server.json so an OpenAI directory update can ship with it.
 const manifests = [
   ".claude-plugin/plugin.json",
-  ".codex-plugin/plugin.json",
   ".cursor-plugin/plugin.json",
   "gemini-extension.json",
 ];
@@ -92,6 +93,23 @@ const versions = manifests.map((p) => [p, JSON.parse(read(p)).version]);
 if (new Set(versions.map(([, v]) => v)).size !== 1) {
   fail(`versions differ: ${versions.map(([p, v]) => `${p}=${v}`).join(", ")}`);
 }
+
+const mcpVersion = JSON.parse(read("server.json")).version;
+const codex = JSON.parse(read(".codex-plugin/plugin.json"));
+if (codex.version !== mcpVersion) {
+  fail(`.codex-plugin/plugin.json version ${codex.version} must match server.json ${mcpVersion}`);
+}
+if (codex.mcpServers !== "./.mcp.json") {
+  fail(`.codex-plugin/plugin.json mcpServers must be "./.mcp.json" for Codex/OpenAI submission`);
+}
+const shortDescription = codex.interface?.shortDescription;
+if (typeof shortDescription !== "string" || !shortDescription.trim() || /[\r\n]/.test(shortDescription)) {
+  fail(`.codex-plugin/plugin.json interface.shortDescription must be one non-empty line`);
+} else if (shortDescription.length > SHORT_DESCRIPTION_MAX) {
+  fail(`.codex-plugin/plugin.json interface.shortDescription is ${shortDescription.length} chars, max ${SHORT_DESCRIPTION_MAX}`);
+}
+if (!existsSync(".mcp.json")) fail("missing .mcp.json (Codex/OpenAI MCP config)");
+else if (read(".mcp.json") !== read("mcp.json")) fail(".mcp.json must match mcp.json");
 
 // Relative links in Markdown
 for (const file of mdFiles) {

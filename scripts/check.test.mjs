@@ -19,7 +19,15 @@ function fixture(t, frontmatter = "name: sample-skill\ndescription: A useful ski
   write(skillPath, `---\n${frontmatter}\n---\n# Sample skill\n`);
   write("skills/sample-skill/agents/openai.yaml", "interface: {}\n");
   write("README.md", "- [sample-skill](./skills/sample-skill/SKILL.md): x\n");
-  for (const file of [".claude-plugin/plugin.json", ".codex-plugin/plugin.json", ".cursor-plugin/plugin.json", "gemini-extension.json"]) {
+  write("server.json", '{"version":"1.36.3"}\n');
+  write("mcp.json", '{"mcpServers":{"Jam":{"url":"https://mcp.jam.dev/mcp"}}}\n');
+  write(".mcp.json", '{"mcpServers":{"Jam":{"url":"https://mcp.jam.dev/mcp"}}}\n');
+  write(".codex-plugin/plugin.json", JSON.stringify({
+    version: "1.36.3",
+    mcpServers: "./.mcp.json",
+    interface: { shortDescription: "Debug and test from Jam links" },
+  }) + "\n");
+  for (const file of [".claude-plugin/plugin.json", ".cursor-plugin/plugin.json", "gemini-extension.json"]) {
     write(file, '{"version":"1.0.0"}\n');
   }
   execFileSync("git", ["init", "--quiet"], { cwd });
@@ -189,4 +197,48 @@ test("jam router must name every other skill, and only real ones", (t) => {
   assert.equal(result.status, 1, result.output);
   assert.match(result.output, /routing table does not name sample-skill/);
   assert.match(result.output, /routing table names missing skill jam-fix/);
+});
+
+test("fails when Codex version does not track server.json", (t) => {
+  const repo = fixture(t);
+  repo.write(".codex-plugin/plugin.json", JSON.stringify({
+    version: "2.0.0",
+    mcpServers: "./.mcp.json",
+    interface: { shortDescription: "Debug and test from Jam links" },
+  }) + "\n");
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /must match server\.json 1\.36\.3/);
+});
+
+test("fails when Codex short description exceeds the OpenAI limit", (t) => {
+  const repo = fixture(t);
+  repo.write(".codex-plugin/plugin.json", JSON.stringify({
+    version: "1.36.3",
+    mcpServers: "./.mcp.json",
+    interface: { shortDescription: "Fix bugs and write tests from Jam recordings" },
+  }) + "\n");
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /shortDescription is 44 chars, max 30/);
+});
+
+test("fails when Codex MCP path is not .mcp.json", (t) => {
+  const repo = fixture(t);
+  repo.write(".codex-plugin/plugin.json", JSON.stringify({
+    version: "1.36.3",
+    mcpServers: "./mcp.json",
+    interface: { shortDescription: "Debug and test from Jam links" },
+  }) + "\n");
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /mcpServers must be "\.\/\.mcp\.json"/);
+});
+
+test("fails when .mcp.json drifts from mcp.json", (t) => {
+  const repo = fixture(t);
+  repo.write(".mcp.json", '{"mcpServers":{"Jam":{"url":"https://example.invalid/mcp"}}}\n');
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /\.mcp\.json must match mcp\.json/);
 });
