@@ -19,7 +19,15 @@ function fixture(t, frontmatter = "name: sample-skill\ndescription: A useful ski
   write(skillPath, `---\n${frontmatter}\n---\n# Sample skill\n`);
   write("skills/sample-skill/agents/openai.yaml", "interface: {}\n");
   write("README.md", "- [sample-skill](./skills/sample-skill/SKILL.md): x\n");
-  for (const file of [".claude-plugin/plugin.json", ".codex-plugin/plugin.json", ".cursor-plugin/plugin.json", "gemini-extension.json"]) {
+  write("server.json", '{"version":"1.36.3"}\n');
+  write("mcp.json", '{"mcpServers":{"Jam":{"url":"https://mcp.jam.dev/mcp"}}}\n');
+  write(".mcp.json", '{"mcpServers":{"Jam":{"type":"http","url":"https://mcp.jam.dev/mcp"}}}\n');
+  write(".codex-plugin/plugin.json", JSON.stringify({
+    version: "1.36.3",
+    mcpServers: "./.mcp.json",
+    interface: { shortDescription: "Debug and test from Jam links" },
+  }) + "\n");
+  for (const file of [".claude-plugin/plugin.json", ".cursor-plugin/plugin.json", "gemini-extension.json"]) {
     write(file, '{"version":"1.0.0"}\n');
   }
   execFileSync("git", ["init", "--quiet"], { cwd });
@@ -190,3 +198,88 @@ test("jam router must name every other skill, and only real ones", (t) => {
   assert.match(result.output, /routing table does not name sample-skill/);
   assert.match(result.output, /routing table names missing skill jam-fix/);
 });
+
+test("fails when Codex version does not track server.json", (t) => {
+  const repo = fixture(t);
+  repo.write(".codex-plugin/plugin.json", JSON.stringify({
+    version: "2.0.0",
+    mcpServers: "./.mcp.json",
+    interface: { shortDescription: "Debug and test from Jam links" },
+  }) + "\n");
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /must match server\.json 1\.36\.3/);
+});
+
+test("fails when Codex short description exceeds the OpenAI limit", (t) => {
+  const repo = fixture(t);
+  repo.write(".codex-plugin/plugin.json", JSON.stringify({
+    version: "1.36.3",
+    mcpServers: "./.mcp.json",
+    interface: { shortDescription: "Fix bugs and write tests from Jam recordings" },
+  }) + "\n");
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /shortDescription is 44 chars, max 30/);
+});
+
+test("fails when Codex MCP path is not .mcp.json", (t) => {
+  const repo = fixture(t);
+  repo.write(".codex-plugin/plugin.json", JSON.stringify({
+    version: "1.36.3",
+    mcpServers: "./mcp.json",
+    interface: { shortDescription: "Debug and test from Jam links" },
+  }) + "\n");
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /mcpServers must be "\.\/\.mcp\.json"/);
+});
+
+test("fails when .mcp.json drifts from mcp.json", (t) => {
+  const repo = fixture(t);
+  repo.write(".mcp.json", '{"mcpServers":{"Jam":{"type":"http","url":"https://example.invalid/mcp"}}}\n');
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /\.mcp\.json must be mcp\.json's Jam URL with type "http"/);
+});
+
+test("fails when .mcp.json is missing type http", (t) => {
+  const repo = fixture(t);
+  repo.write(".mcp.json", '{"mcpServers":{"Jam":{"url":"https://mcp.jam.dev/mcp"}}}\n');
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /\.mcp\.json must be mcp\.json's Jam URL with type "http"/);
+});
+
+test("reports missing MCP files without aborting other checks", (t) => {
+  const repo = fixture(t);
+  rmSync(join(repo.cwd, "mcp.json"));
+  rmSync(join(repo.cwd, ".mcp.json"));
+  repo.write("skills/sample-skill/references/new.md", "[missing](./missing.md)\n");
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /missing mcp\.json/);
+  assert.match(result.output, /missing \.mcp\.json/);
+  assert.match(result.output, /broken link \.\/missing.md/);
+  assert.doesNotMatch(result.output, /ENOENT/);
+});
+
+test("reports a missing Jam URL without aborting other checks", (t) => {
+  const repo = fixture(t);
+  repo.write("mcp.json", '{"mcpServers":{}}\n');
+  repo.write("skills/sample-skill/references/new.md", "[missing](./missing.md)\n");
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /mcp\.json is missing mcpServers\.Jam\.url/);
+  assert.match(result.output, /broken link \.\/missing.md/);
+});
+
+for (const [label, body] of [["null", "null\n"], ["false", "false\n"]]) {
+  test(`fails when mcp.json is ${label}`, (t) => {
+    const repo = fixture(t);
+    repo.write("mcp.json", body);
+    const result = repo.run();
+    assert.equal(result.status, 1, result.output);
+    assert.match(result.output, /mcp\.json must be a JSON object/);
+  });
+}

@@ -53,24 +53,27 @@ Then run the skill on a real task in at least one agent and say which one in the
 
 Two things ship from this repo, each with its own version.
 
-**The plugin.** Its version is the same in `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `.cursor-plugin/plugin.json` and `gemini-extension.json`; CI checks this.
+**The plugin (Claude, Cursor, Gemini).** Its version is the same in `.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json` and `gemini-extension.json`; CI checks this.
 
-1. Bump the version in those four files and move **Unreleased** in the changelog under the new version.
+1. Bump the version in those three files and move **Unreleased** in the changelog under the new version.
 2. Merge to `master` and push a `v<version>` tag.
 
-**The MCP Registry entry.** `server.json` describes the remote Jam MCP server at `mcp.jam.dev`, so its `version` is the server's, not the plugin's. When the server releases:
+**The MCP Registry entry, and the ChatGPT/Codex listing.** `server.json` describes the remote Jam MCP server at `mcp.jam.dev`. Its `version` is the server's. The Codex plugin version in `.codex-plugin/plugin.json` must match it so an OpenAI directory update can ship with the server (OpenAI requires the new version to be greater than the one already published). CI checks the match. When the server releases:
 
-1. Set `version` in `server.json` to the server's version and merge to `master`.
+1. Set `version` in `server.json` and `.codex-plugin/plugin.json` to the server's version and merge to `master`.
 2. Push an `mcp-v<version>` tag. `.github/workflows/publish-mcp.yml` publishes `server.json` to the registry as `dev.jam/jam`. A registry version can't be changed after it is published.
+3. Rebuild the ChatGPT package (below). `scripts/package-chatgpt.mjs` stamps the zip from `server.json`, so the packaged version cannot drift.
 
 ### ChatGPT directory package
 
-The ChatGPT directory takes the skills that read a Jam over MCP alone: `jam-fix` and `jam-to-e2e`, without their `references/`. The CLI steps (in `jam-proof`, `jam-annotate` and the `references/cli.md` files) run local commands, which ChatGPT's external-code review can flag, so a skill meant for ChatGPT keeps them in `references/` and is added to `SKILLS` in `scripts/package-chatgpt.mjs`. Build the package from `master` after the merge: the packaged skills link to `references/` on GitHub.
+The ChatGPT directory takes the skills that read a Jam over MCP alone: `jam`, `jam-fix`, `jam-to-e2e`, `jam-to-tasks` and `jam-to-ticket`, without their `references/`. Keep CLI and shell skills (`jam-proof`, `jam-annotate`, `jam-setup`, `jam-proof-table`, `video-to-jam`, `record-demo`, `record-terminal-proof`, `add-voiceover`) out of the zip. The CLI steps (in those skills and in `references/cli.md`) run local commands, which ChatGPT's external-code review can flag, so a skill meant for ChatGPT keeps them in `references/` and is added to `SKILLS` in `scripts/package-chatgpt.mjs`. Build the package from `master` after the merge: the packaged skills link to `references/` on GitHub.
+
+OpenAI submission also requires the Codex MCP config as `.mcp.json` (`mcpServers` is `"./.mcp.json"`) and `interface.shortDescription` of at most 30 characters. `.mcp.json` is Cursor's `mcp.json` plus `"type": "http"`, which Claude Code's plugin validate requires. The packager writes both, and `scripts/check.mjs` fails if they drift.
 
 ```bash
 node scripts/package-chatgpt.mjs ../jam-chatgpt-<version>.zip
 ```
 
-The script copies those two skills with the plugin identity, connection and assets, and rewrites the listing description so it names only what the package contains.
+The script copies those five skills with the plugin identity, connection and assets, stamps the version from `server.json`, and rewrites the listing description so it names only what the package contains.
 
 Update the existing app entry with this package. Do not create a new app through **Upload New**; that loses the saved identity and connection settings.

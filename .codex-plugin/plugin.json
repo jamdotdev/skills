@@ -1,6 +1,6 @@
 {
   "name": "jam",
-  "version": "2.0.0",
+  "version": "1.36.3",
   "description": "Jam recordings (video, console, network, logs) as context for your coding agent. Fix the bug in a Jam, prove a fix with a recorded Jam, mark up a screenshot, or turn a Jam into an end-to-end test.",
   "author": {
     "name": "Jam",
@@ -17,11 +17,11 @@
     "session-replay",
     "observability"
   ],
-  "mcpServers": "./mcp.json",
+  "mcpServers": "./.mcp.json",
   "skills": "./skills/",
   "interface": {
     "displayName": "Jam",
-    "shortDescription": "Fix, prove and test from Jam recordings",
+    "shortDescription": "Debug and test from Jam links",
     "longDescription": "Jam recordings (video, console, network, logs) as context for your coding agent. Fix the bug in a Jam, prove a fix with a recorded Jam, mark up a screenshot, or turn a Jam into an end-to-end test.",
     "developerName": "Jam",
     "category": "Developer Tools",
