@@ -118,13 +118,17 @@ else {
     else throw error;
   }
 }
-const jamUrl = mcp?.mcpServers?.Jam?.url;
-if (mcp && (typeof jamUrl !== "string" || !jamUrl)) fail("mcp.json is missing mcpServers.Jam.url");
+const isMcpObject = mcp !== null && typeof mcp === "object" && !Array.isArray(mcp);
+const jamUrl = isMcpObject ? mcp.mcpServers?.Jam?.url : undefined;
+if (mcp !== undefined && !isMcpObject) fail("mcp.json must be a JSON object");
+else if (isMcpObject && (typeof jamUrl !== "string" || !jamUrl)) fail("mcp.json is missing mcpServers.Jam.url");
 if (!existsSync(".mcp.json")) fail("missing .mcp.json (Codex/OpenAI MCP config)");
 else {
   try {
     const actual = JSON.parse(read(".mcp.json"));
-    if (typeof jamUrl === "string" && jamUrl && JSON.stringify(actual) !== JSON.stringify(codexMcpConfig(mcp))) {
+    if (actual === null || typeof actual !== "object" || Array.isArray(actual)) {
+      fail(".mcp.json must be a JSON object");
+    } else if (typeof jamUrl === "string" && jamUrl && JSON.stringify(actual) !== JSON.stringify(codexMcpConfig(mcp))) {
       fail(".mcp.json must be mcp.json's Jam URL with type \"http\" (Claude plugin validate)");
     }
   } catch (error) {

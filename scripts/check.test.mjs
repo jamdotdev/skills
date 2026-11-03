@@ -273,3 +273,13 @@ test("reports a missing Jam URL without aborting other checks", (t) => {
   assert.match(result.output, /mcp\.json is missing mcpServers\.Jam\.url/);
   assert.match(result.output, /broken link \.\/missing.md/);
 });
+
+for (const [label, body] of [["null", "null\n"], ["false", "false\n"]]) {
+  test(`fails when mcp.json is ${label}`, (t) => {
+    const repo = fixture(t);
+    repo.write("mcp.json", body);
+    const result = repo.run();
+    assert.equal(result.status, 1, result.output);
+    assert.match(result.output, /mcp\.json must be a JSON object/);
+  });
+}
