@@ -61,14 +61,20 @@ the request belongs in a particular workspace folder, and
 Do not put secrets or sensitive customer data in names, references or metadata.
 
 The response includes `id`, `publicId`, `url`, `name` and `type: reusable`.
-Keep the `publicId` for polling and cleanup, and the returned `url`
-(`https://recorder.jam.dev/<publicId>`) for the human. Create one link per
-request, not one per polling attempt. It can receive more than one Jam.
+Keep the `publicId` for polling and cleanup. Without `--recording-url-id`,
+the `url` is `https://recorder.jam.dev/<publicId>`. With it, the `url` is
+the connected domain with a query parameter, for example
+`https://app.example.com/?jam-recording=<publicId>`. The recorder opens on
+top of the human's own site, and they record there. Keep the returned `url`
+as-is: do not construct it from the `publicId`. Create one link per request,
+not one per polling attempt. It can receive more than one Jam.
 
 ## Hand the link to the human
 
-Send the returned URL with a short, specific ask. Name what to open and what
-to do, not just "record the bug". For example:
+Send the returned `url` as-is with a short, specific ask. For a connected
+domain link, explain that it opens their site with the recorder on top so
+they can record there. Name what to open and what to do, not just "record
+the bug". For example:
 
 > Please open your cart and show me what happens when you click Pay:
 > <recording URL>. Choose **Screen + voice** if you want to narrate. Before

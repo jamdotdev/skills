@@ -38,12 +38,12 @@ You don't need to remember these names. Paste a Jam link, say what you want, and
 
 ### Give your agent a Jam
 
-- [request-jam](./skills/request-jam/SKILL.md): "I can't reproduce, can you show me?" Sends a Recording Link to a user or customer, waits for their screen recording, then reads the Jam.
 - [jam](./skills/jam/SKILL.md): "Take a look at this jam." For a link with no instructions. It reads the Jam and picks the skill below that fits.
 - [jam-fix](./skills/jam-fix/SKILL.md): "Fix this jam." Finds the root cause from the errors, failed requests and steps in the recording, and shows the evidence. It changes code only when you ask.
 - [jam-to-tasks](./skills/jam-to-tasks/SKILL.md): "Do what I said in this jam." Turns your feedback into a numbered to-do list, each item tied to the moment you said it, then works through it.
 - [jam-to-e2e](./skills/jam-to-e2e/SKILL.md): "Write a test for this jam." Writes an end-to-end test with your project's own test setup. A Jam of a bug becomes a test that fails until the fix lands.
 - [jam-to-ticket](./skills/jam-to-ticket/SKILL.md): "Make a ticket for this jam." Files it in Linear, GitHub Issues or Jira with the steps, a frame from the recording and the errors, unless a ticket already exists.
+- [request-jam](./skills/request-jam/SKILL.md): "I can't reproduce, can you show me?" Sends a Recording Link to a user or customer, waits for their screen recording, then reads the Jam.
 - [video-to-jam](./skills/video-to-jam/SKILL.md): "Split this recording by bug." Turns an MP4, a Loom download or a long call into one Jam per issue.
 
 ### Get a Jam back
