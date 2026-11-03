@@ -62,6 +62,7 @@ test("ChatGPT package carries only the MCP-only skills and says so", () => {
   assert.doesNotMatch(notes, /\bAdds\b/);
   assert.match(notes, /https:\/\/mcp\.jam\.dev\/mcp/);
   const mcp = JSON.parse(execFileSync("unzip", ["-p", archive, "jam/.mcp.json"], { encoding: "utf8" }));
+  assert.equal(mcp.mcpServers.Jam.type, "http");
   assert.equal(mcp.mcpServers.Jam.url, "https://mcp.jam.dev/mcp");
   rmSync(dir, { recursive: true, force: true });
 });

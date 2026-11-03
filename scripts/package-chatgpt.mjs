@@ -16,6 +16,15 @@ const MCP_URL = "https://mcp.jam.dev/mcp";
 
 export const mcpVersion = () => JSON.parse(readFileSync("server.json", "utf8")).version;
 
+/** Codex/Claude `.mcp.json`: same Jam URL as Cursor `mcp.json`, with `type` so plugin validate accepts it. */
+export function codexMcpConfig(mcp = JSON.parse(readFileSync("mcp.json", "utf8"))) {
+  const url = mcp.mcpServers?.Jam?.url;
+  if (typeof url !== "string" || !url) throw new Error("mcp.json is missing mcpServers.Jam.url");
+  return { mcpServers: { Jam: { type: "http", url } } };
+}
+
+export const codexMcpJson = (mcp) => JSON.stringify(codexMcpConfig(mcp), null, 2) + "\n";
+
 const gitHead = () => {
   try {
     return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
@@ -40,7 +49,7 @@ export function packageChatgpt(output) {
   const root = join(stage, "jam");
   mkdirSync(root, { recursive: true });
   for (const path of [".codex-plugin", "assets", "LICENSE"]) cpSync(path, join(root, path), { recursive: true });
-  writeFileSync(join(root, ".mcp.json"), readFileSync("mcp.json"));
+  writeFileSync(join(root, ".mcp.json"), codexMcpJson());
   for (const skill of SKILLS) {
     // The package has no references/; point those links at the repo instead.
     const skillMd = readFileSync(join("skills", skill, "SKILL.md"), "utf8")

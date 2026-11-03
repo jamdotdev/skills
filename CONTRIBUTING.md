@@ -68,7 +68,7 @@ Two things ship from this repo, each with its own version.
 
 The ChatGPT directory takes the skills that read a Jam over MCP alone: `jam`, `jam-fix`, `jam-to-e2e`, `jam-to-tasks` and `jam-to-ticket`, without their `references/`. Keep CLI and shell skills (`jam-proof`, `jam-annotate`, `jam-setup`, `jam-proof-table`, `video-to-jam`, `record-demo`, `record-terminal-proof`, `add-voiceover`) out of the zip. The CLI steps (in those skills and in `references/cli.md`) run local commands, which ChatGPT's external-code review can flag, so a skill meant for ChatGPT keeps them in `references/` and is added to `SKILLS` in `scripts/package-chatgpt.mjs`. Build the package from `master` after the merge: the packaged skills link to `references/` on GitHub.
 
-OpenAI submission also requires the Codex MCP config as `.mcp.json` (`mcpServers` is `"./.mcp.json"`) and `interface.shortDescription` of at most 30 characters. The packager writes both, and `scripts/check.mjs` fails if they drift in the repo.
+OpenAI submission also requires the Codex MCP config as `.mcp.json` (`mcpServers` is `"./.mcp.json"`) and `interface.shortDescription` of at most 30 characters. `.mcp.json` is Cursor's `mcp.json` plus `"type": "http"`, which Claude Code's plugin validate requires. The packager writes both, and `scripts/check.mjs` fails if they drift.
 
 ```bash
 node scripts/package-chatgpt.mjs ../jam-chatgpt-<version>.zip

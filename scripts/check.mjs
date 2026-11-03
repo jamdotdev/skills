@@ -6,7 +6,7 @@ import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { parseArgs, stripVTControlCharacters } from "node:util";
 import { isMap, parseDocument } from "yaml";
-import { SHORT_DESCRIPTION_MAX } from "./package-chatgpt.mjs";
+import { SHORT_DESCRIPTION_MAX, codexMcpConfig } from "./package-chatgpt.mjs";
 
 const errors = [];
 const fail = (msg) => errors.push(msg);
@@ -109,7 +109,16 @@ if (typeof shortDescription !== "string" || !shortDescription.trim() || /[\r\n]/
   fail(`.codex-plugin/plugin.json interface.shortDescription is ${shortDescription.length} chars, max ${SHORT_DESCRIPTION_MAX}`);
 }
 if (!existsSync(".mcp.json")) fail("missing .mcp.json (Codex/OpenAI MCP config)");
-else if (read(".mcp.json") !== read("mcp.json")) fail(".mcp.json must match mcp.json");
+else {
+  try {
+    if (JSON.stringify(JSON.parse(read(".mcp.json"))) !== JSON.stringify(codexMcpConfig())) {
+      fail(".mcp.json must be mcp.json's Jam URL with type \"http\" (Claude plugin validate)");
+    }
+  } catch (error) {
+    if (error instanceof SyntaxError) fail(".mcp.json is not valid JSON");
+    else throw error;
+  }
+}
 
 // Relative links in Markdown
 for (const file of mdFiles) {

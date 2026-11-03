@@ -21,7 +21,7 @@ function fixture(t, frontmatter = "name: sample-skill\ndescription: A useful ski
   write("README.md", "- [sample-skill](./skills/sample-skill/SKILL.md): x\n");
   write("server.json", '{"version":"1.36.3"}\n');
   write("mcp.json", '{"mcpServers":{"Jam":{"url":"https://mcp.jam.dev/mcp"}}}\n');
-  write(".mcp.json", '{"mcpServers":{"Jam":{"url":"https://mcp.jam.dev/mcp"}}}\n');
+  write(".mcp.json", '{"mcpServers":{"Jam":{"type":"http","url":"https://mcp.jam.dev/mcp"}}}\n');
   write(".codex-plugin/plugin.json", JSON.stringify({
     version: "1.36.3",
     mcpServers: "./.mcp.json",
@@ -237,8 +237,16 @@ test("fails when Codex MCP path is not .mcp.json", (t) => {
 
 test("fails when .mcp.json drifts from mcp.json", (t) => {
   const repo = fixture(t);
-  repo.write(".mcp.json", '{"mcpServers":{"Jam":{"url":"https://example.invalid/mcp"}}}\n');
+  repo.write(".mcp.json", '{"mcpServers":{"Jam":{"type":"http","url":"https://example.invalid/mcp"}}}\n');
   const result = repo.run();
   assert.equal(result.status, 1, result.output);
-  assert.match(result.output, /\.mcp\.json must match mcp\.json/);
+  assert.match(result.output, /\.mcp\.json must be mcp\.json's Jam URL with type "http"/);
+});
+
+test("fails when .mcp.json is missing type http", (t) => {
+  const repo = fixture(t);
+  repo.write(".mcp.json", '{"mcpServers":{"Jam":{"url":"https://mcp.jam.dev/mcp"}}}\n');
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /\.mcp\.json must be mcp\.json's Jam URL with type "http"/);
 });
