@@ -11,7 +11,7 @@ import { pathToFileURL } from "node:url";
 export const SKILLS = ["jam", "jam-fix", "jam-to-e2e", "jam-to-tasks", "jam-to-ticket"];
 export const SHORT_DESCRIPTION_MAX = 30;
 export const SHORT_DESCRIPTION = "Debug and test from Jam links";
-export const DESCRIPTION = "Jam recordings (video, console, network, logs) as context for ChatGPT. Route a Jam to the right skill, find the root cause of a bug, turn a Jam into tasks or an end-to-end test, or file a ticket.";
+export const DESCRIPTION = "Jam recordings (video, console, network, logs) as context for ChatGPT. Find the root cause of a bug from a Jam, turn a Jam into an end-to-end test, list every change someone asked for in a narrated Jam, or file a Jam as a ticket.";
 const MCP_URL = "https://mcp.jam.dev/mcp";
 
 export const mcpVersion = () => JSON.parse(readFileSync("server.json", "utf8")).version;

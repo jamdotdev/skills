@@ -49,6 +49,10 @@ test("ChatGPT package carries only the MCP-only skills and says so", () => {
   assert.equal(manifest.interface.shortDescription, SHORT_DESCRIPTION);
   assert.ok(manifest.interface.shortDescription.length <= SHORT_DESCRIPTION_MAX);
   assert.equal(manifest.description, DESCRIPTION);
+  assert.equal(
+    manifest.description,
+    "Jam recordings (video, console, network, logs) as context for ChatGPT. Find the root cause of a bug from a Jam, turn a Jam into an end-to-end test, list every change someone asked for in a narrated Jam, or file a Jam as a ticket.",
+  );
   assert.doesNotMatch(manifest.description, /proof|screenshot|annotat/);
   assert.equal(manifest.interface.longDescription, manifest.description);
   const notes = manifest.extensions?.["com.openai"]?.publication?.release_notes;
