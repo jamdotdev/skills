@@ -250,3 +250,13 @@ test("fails when .mcp.json is missing type http", (t) => {
   assert.equal(result.status, 1, result.output);
   assert.match(result.output, /\.mcp\.json must be mcp\.json's Jam URL with type "http"/);
 });
+
+test("reports a missing Jam URL without aborting other checks", (t) => {
+  const repo = fixture(t);
+  repo.write("mcp.json", '{"mcpServers":{}}\n');
+  repo.write("skills/sample-skill/references/new.md", "[missing](./missing.md)\n");
+  const result = repo.run();
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /mcp\.json is missing mcpServers\.Jam\.url/);
+  assert.match(result.output, /broken link \.\/missing.md/);
+});

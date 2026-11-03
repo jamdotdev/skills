@@ -108,10 +108,20 @@ if (typeof shortDescription !== "string" || !shortDescription.trim() || /[\r\n]/
 } else if (shortDescription.length > SHORT_DESCRIPTION_MAX) {
   fail(`.codex-plugin/plugin.json interface.shortDescription is ${shortDescription.length} chars, max ${SHORT_DESCRIPTION_MAX}`);
 }
+let mcp;
+try {
+  mcp = JSON.parse(read("mcp.json"));
+} catch (error) {
+  if (error instanceof SyntaxError) fail("mcp.json is not valid JSON");
+  else throw error;
+}
+const jamUrl = mcp?.mcpServers?.Jam?.url;
+if (mcp && (typeof jamUrl !== "string" || !jamUrl)) fail("mcp.json is missing mcpServers.Jam.url");
 if (!existsSync(".mcp.json")) fail("missing .mcp.json (Codex/OpenAI MCP config)");
 else {
   try {
-    if (JSON.stringify(JSON.parse(read(".mcp.json"))) !== JSON.stringify(codexMcpConfig())) {
+    const actual = JSON.parse(read(".mcp.json"));
+    if (typeof jamUrl === "string" && jamUrl && JSON.stringify(actual) !== JSON.stringify(codexMcpConfig(mcp))) {
       fail(".mcp.json must be mcp.json's Jam URL with type \"http\" (Claude plugin validate)");
     }
   } catch (error) {
