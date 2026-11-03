@@ -1,0 +1,4 @@
+interface:
+  display_name: "Request Jam"
+  short_description: "Ask a human to record a repro, then read their Jam"
+  default_prompt: "Use $request-jam to send a Recording Link to the user, wait for their screen recording, and read the Jam."

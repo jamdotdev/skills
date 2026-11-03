@@ -15,6 +15,7 @@ before you start.
 
 | The user wants | Load |
 | --- | --- |
+| ask a user or customer to record a repro, send a recording link, "can you show me" | `request-jam` |
 | the cause of a bug, a fix, triage, "what went wrong" | `jam-fix` |
 | an e2e test, a regression test, a repro | `jam-to-e2e` |
 | the changes they narrated done ("do what I said", "make it look like this") | `jam-to-tasks` |
