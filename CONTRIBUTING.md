@@ -65,12 +65,12 @@ Two things ship from this repo, each with its own version.
 
 ### ChatGPT directory package
 
-The ChatGPT directory takes the skills that read a Jam over MCP alone: `jam-fix` and `jam-to-e2e`, without their `references/`. The CLI steps (in `jam-proof`, `jam-annotate` and the `references/cli.md` files) run local commands, which ChatGPT's external-code review can flag, so a skill meant for ChatGPT keeps them in `references/` and is added to `SKILLS` in `scripts/package-chatgpt.mjs`. Build the package from `master` after the merge: the packaged skills link to `references/` on GitHub.
+The ChatGPT directory takes the skills that work with Jams over MCP alone: `jam-fix`, `jam-to-e2e` and `record-link-jam`, without their `references/`. Recording through `record-link-jam` needs browser access or a human recorder. The CLI steps (in `jam-proof`, `jam-annotate` and the `references/cli.md` files) run local commands, which ChatGPT's external-code review can flag, so a skill meant for ChatGPT keeps them in `references/` and is added to `SKILLS` in `scripts/package-chatgpt.mjs`. Build the package from `master` after the merge: the packaged skills link to `references/` on GitHub.
 
 ```bash
 node scripts/package-chatgpt.mjs ../jam-chatgpt-<version>.zip
 ```
 
-The script copies those two skills with the plugin identity, connection and assets, and rewrites the listing description so it names only what the package contains.
+The script copies those three skills with the plugin identity, connection and assets, and rewrites the listing description so it names only what the package contains.
 
 Update the existing app entry with this package. Do not create a new app through **Upload New**; that loses the saved identity and connection settings.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Record Link Jam"
+  short_description: "Record a Jam in a browser with Jam MCP and a Recording Link"
+  default_prompt: "Use $record-link-jam to create a Recording Link through Jam MCP, record the work in your browser, and share the Jam."

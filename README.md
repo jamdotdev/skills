@@ -43,6 +43,7 @@ You don't need to remember these names. Paste a Jam link, say what you want, and
 - [jam-to-tasks](./skills/jam-to-tasks/SKILL.md): "Do what I said in this jam." Turns your feedback into a numbered to-do list, each item tied to the moment you said it, then works through it.
 - [jam-to-e2e](./skills/jam-to-e2e/SKILL.md): "Write a test for this jam." Writes an end-to-end test with your project's own test setup. A Jam of a bug becomes a test that fails until the fix lands.
 - [jam-to-ticket](./skills/jam-to-ticket/SKILL.md): "Make a ticket for this jam." Files it in Linear, GitHub Issues or Jira with the steps, a frame from the recording and the errors, unless a ticket already exists.
+- [record-link-jam](./skills/record-link-jam/SKILL.md): "Record a Jam with only the Jam MCP." Creates a Recording Link, records the work in the agent's browser and shares the Jam. It can also ask a user or customer to record a repro.
 - [video-to-jam](./skills/video-to-jam/SKILL.md): "Split this recording by bug." Turns an MP4, a Loom download or a long call into one Jam per issue.
 
 ### Get a Jam back
@@ -66,13 +67,14 @@ These need no Jam account. With the Jam CLI, a video can become a Jam link to co
 ## Requirements
 
 - A free [Jam](https://jam.dev?utm_source=github&utm_medium=readme&utm_campaign=skills) account, for every skill except the three video skills.
-- The [Jam CLI](https://jam.dev/cli). Say "set up jam" and `jam-setup` walks you through it. A skill signs in when it needs to. `jam`, `jam-fix` and `jam-to-e2e` can read a Jam through Jam MCP instead, the Model Context Protocol (MCP) server the plugin connects.
+- The [Jam CLI](https://jam.dev/cli) for CLI workflows. Say "set up jam" and `jam-setup` walks you through it. A skill signs in when it needs to. `jam`, `jam-fix`, `jam-to-e2e` and `record-link-jam` can work through Jam MCP instead, the Model Context Protocol (MCP) server the plugin connects.
 - For `video-to-jam`: ffmpeg and a local transcriber such as Whisper.
 - For `record-demo`: agent-browser 0.38.1 or later, ffmpeg and Node 22 or later, with no npm packages. Its narration comes from `add-voiceover`.
 - For `add-voiceover`: ffmpeg and Node 22 or later, with no npm packages. An ElevenLabs key or the free Kokoro model (Python 3 and uv) gives a natural voice; without either, it uses the macOS voice.
 - For `record-terminal-proof`: asciinema 3 and agg. On Windows, use WSL.
 - In CI or a cloud agent: a [personal access token](https://jam.dev/docs/personal-access-tokens) in `JAM_TOKEN`.
 - For `jam-proof`: recording a web page needs only Chrome. Recording a window or the whole screen needs macOS or Linux (X11).
+- For `record-link-jam`: browser access with control of Chrome's native screen-share picker, or a human to record through the link. Page-level automation cannot click the picker.
 
 ## Install as a plugin
 

@@ -13,8 +13,8 @@ if (!output.endsWith(".zip")) {
   process.exit(1);
 }
 
-export const SKILLS = ["jam-fix", "jam-to-e2e"];
-const DESCRIPTION = "Jam recordings (video, console, network, logs) as context for ChatGPT. Find the root cause of a bug from a Jam, or turn a Jam into an end-to-end test.";
+export const SKILLS = ["jam-fix", "jam-to-e2e", "record-link-jam"];
+const DESCRIPTION = "Jam recordings (video, console, network, logs) as context for ChatGPT. Find the root cause of a bug, turn a Jam into an end-to-end test, or create a Recording Link to record in a browser or ask a human for a recording.";
 
 const stage = mkdtempSync(join(tmpdir(), "jam-chatgpt-"));
 const root = join(stage, "jam");
@@ -30,7 +30,7 @@ for (const skill of SKILLS) {
 
 const manifest = JSON.parse(readFileSync(".codex-plugin/plugin.json", "utf8"));
 manifest.description = DESCRIPTION;
-manifest.interface.shortDescription = "Fix bugs and write tests from Jam recordings";
+manifest.interface.shortDescription = "Fix, test and record with Jam Recording Links";
 manifest.interface.longDescription = DESCRIPTION;
 writeFileSync(join(root, ".codex-plugin/plugin.json"), JSON.stringify(manifest, null, 2) + "\n");
 
