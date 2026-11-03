@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "dev.jam/jam",
   "title": "Jam",
-  "description": "Record a browser session as proof of work, or read a Jam's video, console and network as context.",
-  "version": "1.27.2",
+  "description": "Read a Jam's video, console and network as proof of work, or create a browser Recording Link.",
+  "version": "1.36.3",
   "websiteUrl": "https://jam.dev/mcp",
   "repository": {
     "url": "https://github.com/jamdotdev/skills",
