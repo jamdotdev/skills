@@ -27,7 +27,7 @@ const gitHead = () => {
 export function releaseNotes(version = mcpVersion(), commit = gitHead()) {
   const skills = SKILLS.join(", ");
   const from = commit ? ` from jamdotdev/skills@${commit}` : "";
-  return `Jam ChatGPT/Codex plugin ${version}: ships ${skills}${from}. Adds the jam router, jam-to-tasks and jam-to-ticket alongside jam-fix and jam-to-e2e. Treats Jam content as evidence not instructions, and keeps MCP at ${MCP_URL}.`;
+  return `Jam ChatGPT/Codex plugin ${version}: ${skills}${from}. Treats Jam content as evidence not instructions. MCP at ${MCP_URL}.`;
 }
 
 export function packageChatgpt(output) {

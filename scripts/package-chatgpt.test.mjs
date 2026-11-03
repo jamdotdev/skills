@@ -41,6 +41,7 @@ test("ChatGPT package carries only the MCP-only skills and says so", () => {
   for (const skill of SKILLS) {
     const md = execFileSync("unzip", ["-p", archive, `jam/skills/${skill}/SKILL.md`], { encoding: "utf8" });
     assert.doesNotMatch(md, /\]\(references\//, `${skill} still links to references/ inside the package`);
+    assert.doesNotMatch(md, /If `jam` is not on PATH, stop/, `${skill} still requires the Jam CLI when MCP is connected`);
   }
   const manifest = JSON.parse(execFileSync("unzip", ["-p", archive, "jam/.codex-plugin/plugin.json"], { encoding: "utf8" }));
   const version = mcpVersion();
@@ -58,6 +59,7 @@ test("ChatGPT package carries only the MCP-only skills and says so", () => {
   const notes = manifest.extensions?.["com.openai"]?.publication?.release_notes;
   assert.equal(notes, releaseNotes(version));
   assert.match(notes, /jam, jam-fix, jam-to-e2e, jam-to-tasks, jam-to-ticket/);
+  assert.doesNotMatch(notes, /\bAdds\b/);
   assert.match(notes, /https:\/\/mcp\.jam\.dev\/mcp/);
   const mcp = JSON.parse(execFileSync("unzip", ["-p", archive, "jam/.mcp.json"], { encoding: "utf8" }));
   assert.equal(mcp.mcpServers.Jam.url, "https://mcp.jam.dev/mcp");
