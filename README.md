@@ -66,7 +66,7 @@ These need no Jam account. With the Jam CLI, a video can become a Jam link to co
 ## Requirements
 
 - A free [Jam](https://jam.dev?utm_source=github&utm_medium=readme&utm_campaign=skills) account, for every skill except the three video skills.
-- The [Jam CLI](https://jam.dev/cli). Say "set up jam" and `jam-setup` walks you through it. A skill signs in when it needs to. `jam`, `jam-fix` and `jam-to-e2e` can read a Jam through Jam MCP instead, the Model Context Protocol (MCP) server the plugin connects.
+- The [Jam CLI](https://jam.dev/docs/cli). Say "set up jam" and `jam-setup` walks you through it. A skill signs in when it needs to. `jam`, `jam-fix` and `jam-to-e2e` can read a Jam through Jam MCP instead, the Model Context Protocol (MCP) server the plugin connects.
 - For `video-to-jam`: ffmpeg and a local transcriber such as Whisper.
 - For `record-demo`: agent-browser 0.38.1 or later, ffmpeg and Node 22 or later, with no npm packages. Its narration comes from `add-voiceover`.
 - For `add-voiceover`: ffmpeg and Node 22 or later, with no npm packages. An ElevenLabs key or the free Kokoro model (Python 3 and uv) gives a natural voice; without either, it uses the macOS voice.
@@ -146,8 +146,8 @@ Bug in a skill, or a skill you want? [Open an issue](https://github.com/jamdotde
 
 <p align="center">
   <a href="https://jam.dev">jam.dev</a> ·
-  <a href="https://jam.dev/mcp">Jam MCP</a> ·
-  <a href="https://jam.dev/cli">Jam CLI</a> ·
+  <a href="https://jam.dev/docs/jam-mcp">Jam MCP</a> ·
+  <a href="https://jam.dev/docs/cli">Jam CLI</a> ·
   <a href="https://jam.dev/utilities">Dev Utils</a> ·
   <a href="./CHANGELOG.md">Changelog</a> ·
   <a href="./LICENSE">MIT</a>

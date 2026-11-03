@@ -21,7 +21,7 @@ jam auth status --json || jam auth login
 ```
 
 If `jam` is not on PATH, stop and ask the user to install it from
-https://jam.dev/cli, then continue. Do not install it yourself.
+https://jam.dev/docs/cli, then continue. Do not install it yourself.
 
 Exit code 3 means not signed in. With no browser (CI, a cloud agent), ask the
 user to set `JAM_TOKEN` to a personal access token from
