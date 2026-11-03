@@ -1,6 +1,6 @@
 # Jam plugin and MCP server
 
-The plugin connects your coding agent to the Jam MCP server at `https://mcp.jam.dev/mcp` and installs the skills in this repository. Install commands are in the [README](../README.md#install-as-a-plugin). The canonical, always current MCP reference is [jam.dev/mcp](https://jam.dev/mcp); this page is a snapshot and can lag behind it.
+The plugin connects your coding agent to the Jam MCP server at `https://mcp.jam.dev/mcp` and installs the skills in this repository. Install commands are in the [README](../README.md#install-as-a-plugin). The canonical, always current MCP reference is [jam.dev/docs/jam-mcp](https://jam.dev/docs/jam-mcp); this page is a snapshot and can lag behind it.
 
 ## Sign in
 
@@ -38,7 +38,7 @@ Each token works in one workspace, belongs to your account, and expires after se
 
 ## What the server can do
 
-The full, current tool list is at [jam.dev/mcp](https://jam.dev/mcp); each tool also describes itself to your agent.
+The full, current tool list is at [jam.dev/docs/jam-mcp](https://jam.dev/docs/jam-mcp); each tool also describes itself to your agent.
 
 - **Read:** a Jam's details, console logs, network requests, user events, screenshots, video frames, transcript, chapters and custom metadata. Search Jams across your workspace.
 - **Write:** comments and reactions, folders, Jam titles and descriptions, resources (links to a pull request, CI run or doc) and relations between Jams, Recording Links, and feedback to the Jam team.
