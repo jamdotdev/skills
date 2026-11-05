@@ -1,0 +1,294 @@
+/* Default look: Jam brand, after jam.dev: white page, faint square grid, medium-weight headlines,
+   soft cards, lime for what is new. To rebrand, load a second stylesheet after this one that redefines the
+   tokens in :root (colors, fonts) and swap logo.png. Components below read only tokens.
+
+   Color carries meaning, and only three:
+     ink on paper    structure: what exists and stays as it is
+     solid lime      what this change adds (.new)
+     accent          what goes wrong, or the risk left over (.risk)
+   Grey and dashed is context: the old way, the road not taken (.mute, .ghost).
+   A lilac marker highlights the key words of a title; it is emphasis, not a fourth meaning.
+   Everything shares one radius and one soft shadow, so only color and fill tell parts apart. Diagram boxes
+   are node cards: a shadow ring for depth, a ring in the state's color for .new and .risk, wires thin and grey
+   unless the change adds them, labels as pills on the wire. */
+:root {
+  --bg: #ffffff;
+  --grid: #f2f2f0;
+  --panel: #ffffff;
+  --panel-2: #f7f7f5;         /* the findings column of a decision */
+  --line: #ebebe8;
+  --ink: #202020;
+  --ink-2: #5a5a5a;
+  --muted: #9b9b9b;
+  --accent: #ff4063;
+  --accent-soft: #fff0f3;
+  --on-ink: #ffffff;
+  --new-bg: #a7f374;          /* fill of what the change adds */
+  --new-fg: #1d3a0b;
+  --new-line: #55b52a;        /* wires the change adds */
+  --wire: #8c8c85;            /* wires that exist and stay */
+  --wire-mute: #cfcfc8;
+  --ring: 0 0 0 1px rgba(32,32,32,.07);
+  --lift: 0 1px 2px rgba(32,32,32,.05), 0 12px 32px -14px rgba(32,32,32,.16);
+  --mark-bg: #ecdcff;         /* title highlight */
+  --term-bg: #1c1c1c;         /* terminals and JSON */
+  --term-fg: #e8e8e8;
+  --title-weight: 550;
+  --title-track: -0.045em;
+  --shadow: 0 1px 2px rgba(32,32,32,.04), 0 6px 20px rgba(32,32,32,.04);
+  --radius: 20px;
+  --border: 1.5px;
+  --font: "Inter", "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+body { font-family: var(--font); color: var(--ink); -webkit-font-smoothing: antialiased; font-feature-settings: "ss01", "cv11"; }
+
+.frame {
+  position: relative; width: 1920px; height: 1080px; overflow: hidden;
+  background-color: var(--bg);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+.brandbar {
+  position: absolute; top: 44px; left: 140px; right: 140px; z-index: 5;
+  display: flex; align-items: center; gap: 14px; font: 500 21px/1 var(--font); color: var(--muted);
+}
+.brandbar img { width: 36px; height: 36px; }
+.brandbar b { color: var(--ink); font-weight: 700; }
+.brandbar .sp { flex: 1; }
+.brandbar span:last-child { font-family: var(--mono); font-size: 19px; }
+
+.scene { position: absolute; inset: 0; padding: 130px 140px 150px; visibility: hidden; display: flex; flex-direction: column; transform-origin: 50% 45%; }
+.scene.center { justify-content: center; }
+.stage { position: relative; flex: 1; transform-origin: 0 0; }
+
+/* Type: Inter for words, mono only for things you would type or grep */
+.kicker { display: inline-flex; align-self: flex-start; padding: 10px 18px; border: var(--border) solid var(--line); border-radius: 14px; background: var(--panel); font: 550 22px/1.2 var(--font); color: var(--ink); }
+.label, .chosen { display: block; margin-bottom: 12px; font: 550 21px/1.2 var(--font); color: var(--muted); }
+.title { font-size: 76px; line-height: 1.06; font-weight: var(--title-weight); letter-spacing: var(--title-track); margin-top: 18px; max-width: 1560px; }
+.title.xl { font-size: 104px; letter-spacing: -3.6px; }
+.title em { font-style: normal; background: var(--mark-bg); border-radius: 18px; padding: 0 14px; }
+.mark { font-style: normal; color: var(--accent); }
+.lede { font-size: 34px; line-height: 1.38; color: var(--ink-2); margin-top: 22px; max-width: 1300px; }
+.small { font-size: 24px; color: var(--muted); }
+code, .m { font-family: var(--mono); font-size: 0.88em; white-space: nowrap; }
+
+/* Layout */
+.row { display: flex; gap: 28px; align-items: stretch; }
+.col { display: flex; flex-direction: column; gap: 20px; }
+.grow { flex: 1; min-width: 0; }
+.mt { margin-top: 44px; }
+.abs { position: absolute; }
+
+/* Focus: what the voice is on gets lilac, the same mark as a title's key words, and full ink; the runtime dims
+   the rest of the scene. Surfaces get a flush lilac halo, flat regions (decision columns, rows) a lilac fill. */
+:root { --focus: 0 0 0 calc(var(--hl, 0) * 7px) var(--mark-bg); }
+.card, .term, .code, .packet, .step { outline: calc(var(--hl, 0) * 7px) solid var(--mark-bg); outline-offset: 0; }
+
+/* Cards, boxes and steps: one surface in three states */
+.card, .box, .step, .adr { background: var(--panel); border: var(--border) solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.card { padding: 28px 32px; }
+.card h3 { font-size: 34px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.18; }
+.card p { font-size: 26px; line-height: 1.42; color: var(--ink-2); margin-top: 10px; }
+.card.new, .box.new, .step.new { background: var(--new-bg); border-color: var(--new-bg); color: var(--new-fg); }
+.card.new p, .box.new .sub, .card.new .label, .card.new .chosen { color: color-mix(in srgb, var(--new-fg) 70%, var(--new-bg)); }
+.card.risk, .box.risk, .step.risk { border-color: var(--accent); }
+.card.risk .label, .card.risk .chosen { color: var(--accent); }
+.card.mute, .box.ghost, .step.mute { background: transparent; border-style: dashed; color: var(--muted); }
+.card.mute p { color: var(--muted); }
+.step { padding: 16px 22px; font: 600 25px/1.3 var(--font); white-space: nowrap; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 10px; white-space: nowrap;
+  font: 600 21px/1.2 var(--mono); background: var(--panel); border: var(--border) solid var(--line); color: var(--ink);
+}
+.chip.new { background: var(--new-bg); border-color: var(--new-bg); color: var(--new-fg); }
+.chip.risk { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+.chip.mute { background: transparent; border-style: dashed; color: var(--muted); }
+.num { display: inline-grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; border: var(--border) solid var(--ink); color: var(--ink); font: 700 24px/1 var(--font); flex: none; }
+
+/* A decision, told like an architecture decision record: one surface, a column per part.
+   <div class="adr"><div class="chose">…</div><div class="rejected">…</div><div class="cost">…</div><div class="checked">…</div></div>
+   Each part opens with a .label; .checked lists findings as <li>, with code refs in <code>. */
+.adr { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.adr > div { padding: 26px 28px; border-left: var(--border) solid var(--line); font-size: 25px; line-height: 1.38;
+  background: color-mix(in srgb, var(--mark-bg) calc(var(--hl, 0) * 55%), var(--col-bg, var(--panel)));
+  color: color-mix(in srgb, var(--ink) calc(var(--hl, 0) * 100%), var(--col-fg, var(--ink-2))); }
+.adr > div:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+.adr > div:first-child { border-left: 0; }
+.adr .checked { --col-bg: var(--panel-2); border-radius: 0 var(--radius) var(--radius) 0; }
+.adr .chose { --col-fg: var(--ink); font-weight: 650; }
+.adr .rejected { --col-fg: var(--muted); }
+.adr .cost .label { color: var(--accent); }
+.adr .cost { --col-fg: var(--ink); }
+.adr ul, ul.checks { list-style: none; display: grid; gap: 10px; }
+.adr li, .checks li { padding-left: 32px; position: relative; }
+.adr li::before, .checks li::before { content: "✓"; position: absolute; left: 0; font-weight: 800; color: var(--ink); }
+.adr li code { display: block; font-size: 19px; color: var(--muted); margin-top: 2px; }
+
+/* Terminal and JSON: monochrome; the error line is the one accent */
+.term, .packet { background: var(--term-bg); color: var(--term-fg); border-radius: var(--radius); }
+.term { padding: 26px 34px 30px; font: 500 26px/1.6 var(--mono); overflow: hidden; }
+.term::before { content: ""; display: block; height: 12px; width: 12px; border-radius: 50%; background: #4a5056; box-shadow: 22px 0 0 #4a5056, 44px 0 0 #4a5056; margin-bottom: 20px; }
+.term .cmd::before { content: "$ "; color: var(--muted); }
+.term .err, .packet .err { color: #ff7d95; }
+.term .ok { color: var(--term-fg); font-weight: 700; }
+.term .dim { color: var(--muted); }
+.term .typing::after, .typing::after { content: "▍"; color: var(--muted); }
+.term div { white-space: pre; }
+.packet { position: absolute; font: 500 21px/1.45 var(--mono); padding: 12px 18px; white-space: pre; }
+.packet .k { color: var(--muted); }
+.packet .s, .packet .n { color: var(--term-fg); }
+
+/* Code */
+.code { background: var(--panel); border: var(--border) solid var(--line); border-radius: var(--radius); overflow: hidden; font: 500 24px/1.55 var(--mono); }
+.code .file { padding: 14px 24px; font-size: 20px; color: var(--muted); border-bottom: var(--border) solid var(--line); }
+.code .ln { padding: 0 24px; white-space: pre; }
+.code .add { box-shadow: inset 5px 0 0 var(--ink); font-weight: 700; }
+.code .del { color: var(--muted); text-decoration: line-through; }
+.code .hl { background: var(--accent-soft); box-shadow: inset 5px 0 0 var(--accent); }
+.code .c { color: var(--muted); }
+.code .k { font-weight: 700; }
+.code .s { color: var(--ink-2); }
+
+/* Diagrams: absolutely placed boxes over an SVG of wires, inside a .stage. A box is a node card:
+   an optional .ico tile (an inline 24px-grid SVG icon), an optional .eb kind label, h4 and .sub.
+   Depth comes from a shadow ring, not a border; the border stays transparent so forced colors still draw it. */
+.box { position: absolute; padding: 20px 24px; border-color: transparent; box-shadow: var(--ring), var(--focus), var(--lift); }
+.box:has(> .ico) { display: flex; align-items: center; gap: 16px; }
+.box:has(> .ico) h4 { font-size: 28px; }
+.box:has(> .ico) .sub { font-size: 19px; }
+.box > div { min-width: 0; }
+.box h4 { font-size: 30px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; white-space: nowrap; }
+.box .sub { font: 500 21px/1.3 var(--font); color: var(--muted); margin-top: 4px; white-space: nowrap; }
+.box .eb { font: 600 15px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 8px; white-space: nowrap; }
+.box .ico { flex: 0 0 56px; height: 56px; padding: 14px; border-radius: 12px; background: var(--panel-2); color: var(--ink); }
+.box .ico svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+.box.new { background: var(--panel); color: var(--ink); box-shadow: 0 0 0 2px var(--new-line), 0 0 0 calc(2px + var(--hl, 0) * 7px) var(--mark-bg), 0 0 0 8px color-mix(in srgb, var(--new-bg) 32%, transparent), var(--lift); }
+.box.new .sub { color: var(--muted); }
+.box.new .ico { background: var(--new-bg); color: var(--new-fg); }
+.box.risk { box-shadow: 0 0 0 1.5px var(--accent), 0 0 0 calc(1.5px + var(--hl, 0) * 7px) var(--mark-bg), var(--lift); }
+.box.risk .ico { background: var(--accent-soft); color: var(--accent); }
+.box.ghost { border-color: #cfcfc8; box-shadow: none; opacity: 0.55; }
+.zone { position: absolute; border: var(--border) dashed var(--line); border-radius: 24px; }
+.zone > span, .boundary > span { position: absolute; top: -14px; left: 24px; background: var(--bg); padding: 0 10px; font: 700 18px/1.4 var(--font); color: var(--muted); letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; }
+.boundary { position: absolute; border-left: var(--border) dashed var(--muted); }
+.boundary > span { top: -8px; left: 14px; padding: 0; background: none; }
+svg.wires { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+/* Arrowheads and source dots come from runtime.js, colored to match the wire's class */
+svg .wire { fill: none; stroke: var(--wire); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+svg .wire.thin, svg .wire.mute { stroke: var(--wire-mute); }
+svg .wire.new { stroke: var(--new-line); stroke-width: 3; }
+svg .wire.accent, svg .wire.risk { stroke: var(--accent); stroke-dasharray: 8 7; }
+.tag { position: absolute; font: 600 21px/1.3 var(--font); color: var(--ink-2); white-space: nowrap; }
+.tag.risk { color: var(--accent); }
+/* A tag with data-on="wireId" is a pill sitting on the middle of that wire */
+.tag[data-on] { padding: 6px 12px; border-radius: 999px; border: 1px solid transparent; background: var(--panel); box-shadow: 0 0 0 1.5px var(--wire); font: 500 17px/1 var(--mono); z-index: 2; }
+.tag[data-on].new { box-shadow: 0 0 0 1.5px var(--new-line); color: var(--new-fg); background: color-mix(in srgb, var(--new-bg) 18%, var(--panel)); }
+.tag[data-on].risk { box-shadow: 0 0 0 1.5px var(--accent); background: var(--accent-soft); }
+.tag[data-on].mute { box-shadow: 0 0 0 1.5px var(--wire-mute); color: var(--muted); }
+.cross { position: absolute; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: var(--on-ink); display: grid; place-items: center; font: 800 34px/1 var(--font); }
+
+/* Chapter rail, added by runtime.js from each scene's data-title */
+.rail { position: absolute; left: 140px; right: 140px; bottom: 48px; display: flex; gap: 10px; z-index: 5; }
+.rail-seg { flex: 1; position: relative; padding-top: 14px; font: 600 17px/1.2 var(--font); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rail-seg::before, .rail-seg i { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 2px; background: var(--grid); }
+.rail-seg i { background: var(--ink); transform-origin: 0 50%; transform: scaleX(0); }
+.rail-seg.on { color: var(--ink); }
+
+/* Browser preview only */
+.preview, .preview body { width: 100%; height: 100%; background: #111; }
+.preview .frame { transform: scale(var(--fit, 0.5)); transform-origin: 0 0; }
+.player { position: fixed; left: 0; right: 0; bottom: 0; height: 56px; display: flex; gap: 14px; align-items: center; padding: 0 16px; background: #1c2024; color: #fff; font: 14px var(--mono); }
+.player button { font: inherit; padding: 6px 16px; border-radius: 8px; border: 0; background: var(--accent); color: #fff; cursor: pointer; }
+.player input { flex: 1; }
+.no-timeline { position: fixed; top: 20px; left: 20px; font: 18px var(--mono); color: var(--accent); }
+
+/* Lanes: a sequence diagram laid out by runtime.js from <pre class="lanes"> */
+pre.lanes { visibility: hidden; position: relative; }
+.lanes { position: relative; width: 100%; }
+.lanes .lane-head { justify-content: center; text-align: center; padding: 22px 18px; }
+.lanes .lane-head h4 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+svg .lifeline { fill: none; stroke: var(--line); stroke-width: 2; stroke-dasharray: 2 8; stroke-linecap: round; }
+.lanes .lane-label { font: 600 21px/1.2 var(--mono); letter-spacing: 0.02em; color: var(--ink-2); background: var(--bg); padding: 2px 8px; border-radius: 6px; }
+.lanes .lane-label.new { color: var(--new-fg); background: var(--new-bg); }
+.lanes .lane-frame { border-color: var(--muted); border-width: var(--border); background: color-mix(in srgb, var(--panel-2) 60%, transparent); }
+.lanes .lane-frame > span { font: 600 18px/1.4 var(--mono); text-transform: none; letter-spacing: 0; background: var(--bg); }
+.lanes svg .wire.new { stroke-width: 5; }
+
+/* Mermaid diagrams drawn by Pele (pre.mermaid): node cards, pills on the wires, the deck's own arrows */
+.pele-host { position: absolute; inset: 0 0 auto 0; display: flex; justify-content: center;
+  --pele-bg: var(--bg); --pele-fg: var(--ink); --pele-muted: var(--muted); --pele-line: var(--wire);
+  --pele-surface: var(--panel); --pele-surface-alt: var(--panel-2); --pele-border: rgba(32,32,32,.08); --pele-radius: 18px; }
+.pele-host svg { overflow: visible; }
+.pele-node rect, .pele-node polygon, .pele-node path, .pele-node circle, .pele-node ellipse { stroke-width: 1.5; filter: drop-shadow(0 10px 14px rgba(32,32,32,.08)); }
+.pele-node .pele-focus { fill: none; stroke: var(--mark-bg); stroke-width: calc(var(--hl, 0) * 16px); filter: none; }
+.pele-node .pele-label tspan:first-child { font-weight: 600; letter-spacing: -0.02em; }
+.pele-node .pele-label tspan + tspan { fill: var(--muted); font-size: 0.78em; }
+.pele-node.new > :not(.pele-focus):not(text) { stroke: var(--new-line); stroke-width: 3; }
+.pele-node.risk > :not(.pele-focus):not(text) { stroke: var(--accent); stroke-width: 2; }
+.pele-node.ghost { opacity: .55; }
+.pele-node.ghost > :not(.pele-focus):not(text) { stroke: #cfcfc8; stroke-dasharray: 8 6; filter: none; }
+.pele-edge-label rect { rx: 14px; stroke: var(--wire); stroke-width: 1.5; }
+.pele-edge-label text { fill: var(--ink-2); font-weight: 500; }
+.pele-edge-label.new rect { stroke: var(--new-line); } .pele-edge-label.new text { fill: var(--new-fg); }
+.pele-edge-label.risk rect { stroke: var(--accent); } .pele-edge-label.risk text { fill: var(--accent); }
+.pele-edge-label.mute rect { stroke: var(--wire-mute); } .pele-edge-label.mute text { fill: var(--muted); }
+
+/* A datum in flight: rides a wire with data-travel */
+.token {
+  position: absolute; left: 0; top: 0; z-index: 3; white-space: nowrap;
+  padding: 7px 14px; border-radius: 999px; font: 600 20px/1.2 var(--mono);
+  background: var(--ink); color: var(--on-ink); box-shadow: var(--shadow);
+}
+.token.new { background: var(--new-bg); color: var(--new-fg); }
+.token.risk { background: var(--accent); color: var(--on-ink); }
+
+/* data-strike: a line sweeps through the element */
+:where([data-strike]) { position: relative; }
+[data-strike]::after {
+  content: ""; position: absolute; left: -6px; right: -6px; top: 50%; height: 4px; border-radius: 2px;
+  background: var(--accent); transform: scaleX(var(--strike, 0)); transform-origin: 0 50%;
+}
+
+/* A web page, drawn as a page: .browser > .bar (url) + .page with .field, .btn, .txt */
+.browser { position: absolute; background: var(--panel); border: var(--border) solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.browser > .bar { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: var(--border) solid var(--line); font: 500 19px/1 var(--mono); color: var(--muted); }
+.browser > .bar::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--line); box-shadow: 20px 0 0 var(--line), 40px 0 0 var(--line); margin-right: 46px; }
+.browser > .page { position: relative; padding: 28px 30px; display: flex; flex-direction: column; gap: 16px; font-size: 24px; }
+.page .txt { color: var(--ink-2); line-height: 1.4; }
+.page h5 { font-size: 30px; font-weight: 600; letter-spacing: -0.02em; }
+.page .field { display: flex; flex-direction: column; gap: 6px; font-size: 19px; color: var(--muted); }
+.page .field > i { font-style: normal; display: block; padding: 12px 16px; border: var(--border) solid var(--line); border-radius: 12px; font: 500 22px/1.2 var(--mono); color: var(--ink); }
+.page .btn { align-self: flex-start; padding: 12px 22px; border-radius: 12px; background: var(--ink); color: var(--on-ink); font-weight: 600; }
+.page .card, .page .field, .page .btn, .page .txt { outline: calc(var(--hl, 0) * 6px) solid var(--mark-bg); outline-offset: 0; }
+
+/* A table whose rows land one by one: give each tr a data-in */
+table.rows { border-collapse: separate; border-spacing: 0; background: var(--panel); border: var(--border) solid var(--line); border-radius: var(--radius); overflow: hidden; font: 500 21px/1.3 var(--mono); box-shadow: var(--shadow); }
+table.rows caption { caption-side: top; text-align: left; padding: 0 0 10px 4px; font: 550 21px/1.2 var(--font); color: var(--muted); }
+table.rows th { text-align: left; padding: 12px 18px; font-weight: 600; color: var(--muted); background: var(--panel-2); border-bottom: var(--border) solid var(--line); }
+table.rows td { padding: 11px 18px; border-bottom: var(--border) solid var(--line); white-space: nowrap; }
+table.rows tr:last-child td { border-bottom: 0; }
+table.rows tr.new td { background: color-mix(in srgb, var(--new-bg) 45%, var(--panel)); }
+table.rows tr.mute td { color: var(--muted); }
+
+/* A time axis: .track[data-span="0 24"] holds rows; children placed with data-t / data-t2 */
+.track { position: relative; }
+.track .tk-row { position: relative; height: 56px; border-bottom: var(--border) solid var(--line); }
+.track .tk-row > b { position: absolute; right: calc(100% + 24px); top: 50%; transform: translateY(-50%); white-space: nowrap; font: 550 22px/1 var(--font); color: var(--ink-2); }
+.track .tk-span { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--new-bg) 55%, transparent); border-radius: 8px; }
+.track .tk-dot { position: absolute; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--ink); }
+.track .tk-dot.new { background: var(--new-line); }
+.track .tk-dot.risk { background: var(--accent); }
+.track .tk-dot.mute { background: var(--line); }
+.track .tk-note { position: absolute; top: 50%; transform: translate(22px, -50%); white-space: nowrap; font: 550 20px/1 var(--font); color: var(--ink-2); }
+.track .tk-note.risk { color: var(--accent); }
+.track .tk-tick { position: absolute; bottom: -34px; transform: translateX(-50%); font: 500 18px/1 var(--mono); color: var(--muted); }
+.track .tk-mark { position: absolute; top: -40px; transform: translateX(-50%); white-space: nowrap; font: 600 20px/1 var(--font); }
+.track .playhead { position: absolute; top: -12px; bottom: -12px; width: 0; border-left: 3px solid var(--ink); z-index: 4; }
+.term.wrap div { white-space: pre-wrap; }
+.track .tk-tick, .track .tk-note, .track .tk-mark { white-space: nowrap; }
+.lanes .lane-frame > span { top: auto; bottom: -14px; }
