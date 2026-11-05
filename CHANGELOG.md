@@ -17,6 +17,7 @@
 - Added `add-voiceover`: voice a spoken script line by line and lay each line under its moment in any video, with a WebVTT subtitle file. The agent asks which voice to use: ElevenLabs (`eleven_v4`), Kokoro (free, local, a one-time 340 MB download), the OS voice, or the team's own command. A video with its own sound keeps it under the narration, lowered together with it only if the mix would clip. The script runs on Node 22 or later with nothing to install. No Jam account needed.
 - Added `record-terminal-proof`: record a terminal run with asciinema and render a GIF for the pull request, plus an MP4 when needed. No Jam account needed.
 - `scripts/check.mjs` counts Jam mentions in an unbranded skill in prose only, so a "With Jam" line can show the command.
+- Added `explain-pr-as-video`: a narrated video that teaches a reviewer a pull request, from an animated HTML deck rendered to MP4 with a browser preview, voiced through `add-voiceover`.
 - `server.json` follows Jam MCP 1.27.1, the version production serves.
 - `jam-fix` hands a narrated walkthrough that asks for several changes to `jam-to-tasks`, when installed, instead of diagnosing it as one bug.
 - Added `jam-to-tasks`: turn a narrated Jam into a numbered list of every change asked for, each tied to its moment, frame and quote, then work through the list.

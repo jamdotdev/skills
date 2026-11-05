@@ -26,6 +26,7 @@ before you start.
 | Jam set up for this agent: the CLI, sign-in, Jam MCP, the skills | `jam-setup` |
 | a polished, narrated demo video of a feature | `record-demo` |
 | a spoken voiceover on a video | `add-voiceover` |
+| a narrated video that walks a reviewer through a pull request | `explain-pr-as-video` |
 | a terminal run recorded as a GIF for the pull request | `record-terminal-proof` |
 
 Several asks in one request ("fix it and file a ticket"): run the skills in

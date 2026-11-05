@@ -1,0 +1,4 @@
+interface:
+  display_name: "Explain PR as Video"
+  short_description: "Teach a reviewer a pull request in a narrated video"
+  default_prompt: "Use $explain-pr-as-video to make a narrated video that teaches a reviewer this pull request."
