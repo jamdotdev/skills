@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `jam-proof` documents Playwright response interception through the recording proxy, route setup before prefetch, client-side cache and service-worker caveats, and labeling mocked proof runs.
 - ChatGPT/Codex directory package is submittable without hand-edits: `.mcp.json` (Jam URL plus `"type": "http"` for Claude plugin validate), a short description of at most 30 characters ("Debug and test from Jam links"), version 1.36.3 matching Jam MCP / `server.json`, and generated release notes. The packager stamps the version from `server.json`; CI fails if Codex drifts. The zip now ships `jam`, `jam-fix`, `jam-to-e2e`, `jam-to-tasks` and `jam-to-ticket`. `jam-to-tasks` and `jam-to-ticket` use Jam MCP first, with CLI steps in `references/cli.md`, so ChatGPT does not stop for a missing `jam` binary.
 - Links to the Jam CLI and Jam MCP docs use their canonical URLs, `https://jam.dev/docs/cli` and `https://jam.dev/docs/jam-mcp`, instead of short links that redirect.
 - Added `jam-setup`: set up Jam for a coding agent in one run. It installs the Jam CLI after the user says yes to the install command (the user runs it when they say no or the harness blocks it), signs in, connects Jam MCP with `add-mcp`, installs the skills with `skills`, and checks the result with `jam doctor`. It asks once whether to install for this project or every project, skips what is already set up, and skips MCP and skills when the Jam plugin is installed. `jam skills install` is the fallback without Node.js.

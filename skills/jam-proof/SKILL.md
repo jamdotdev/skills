@@ -134,7 +134,8 @@ dialogs, no Screen Recording permission, no window to keep uncovered.
 Record at 1920x1080, set before the page loads, and click with `mouse move`
 then `mouse down` and `mouse up` so the cursor overlay shows each click.
 [references/browser.md](references/browser.md) has the cursor overlay rules
-(agent-browser 0.38 or later), other sizes, and visible Chrome for rung 2.
+(agent-browser 0.38 or later), other sizes, visible Chrome for rung 2, and
+Playwright response interception through the recording proxy.
 
 Drive through `cdpProxy`, not Chrome, or the clicks and typing never become
 actions. Anything that takes a DevTools URL takes this one:

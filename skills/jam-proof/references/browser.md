@@ -1,6 +1,34 @@
 # jam-proof: browser details
 
-Read this from `SKILL.md` when the video needs a readable cursor, a size other than 1920x1080, or a visible Chrome window.
+Read this from `SKILL.md` when the video needs a readable cursor, a size other than 1920x1080, a visible Chrome window, or Playwright response interception.
+
+## Intercept responses with Playwright
+
+`route.fetch()` and `route.fulfill()` work through `cdpProxy` with both
+`page.route()` and `context.route()`. Connect with
+`chromium.connectOverCDP(cdpProxy)`, then register the route before navigating
+or triggering the request. With `jam record run`, the proxy address is in
+`JAM_CDP_PROXY`.
+
+If the handler does not run, check whether the browser sends a matching
+request. A Next.js prefetch may fill the app's client-side cache before the
+route is installed, so a later click may send no new request. Reload with the
+route installed or use a fresh browser context. Match the actual URL,
+including query parameters, and count handler calls rather than inferring
+interception from the page alone.
+
+Playwright routing disables the browser's HTTP cache, not an app's
+client-side cache. Routes do not intercept requests handled by a service
+worker. Use `browser.newContext({ serviceWorkers: "block" })` when the app
+does not require one, and sign in again if the fresh context needs it. See
+[Playwright's routing reference](https://playwright.dev/docs/api/class-browsercontext#browser-context-route)
+for its routing constraints and the
+[response interception example](https://jam.dev/docs/cli-record-browser#intercept-responses-with-playwright)
+for setup.
+
+Label mocked responses in the proof's title or description. A mocked response
+proves the page's behavior with that response, not that the backend returned
+it. Do not present a mock-backed run as an end-to-end backend check.
 
 ## Readable cursor video
 
