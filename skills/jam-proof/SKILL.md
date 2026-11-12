@@ -168,13 +168,16 @@ sign one user out and the other in.
   repeat `--cdp`:
 
 ```
-jam record run --cdp 9222 --cdp 9223 --title "<the claim>" --json -- <script>
+jam record start --cdp 9222 --cdp 9223 --title "<the claim>" --json   # → { session, browsers: [{ cdpEndpoint, cdpProxy }, …] }
+# drive each user through its own browsers[i].cdpProxy
+jam record stop <session> --json
 ```
 
-The script reads the proxies from `$JAM_CDP_PROXIES`, space-separated in
-`--cdp` order (`$JAM_CDP_PROXY` is the first), and drives each Chrome
-through its own proxy. The `start` receipt lists them in `browsers`. The
-Console and Network panels combine every browser on one timeline.
+`browsers` is in `--cdp` order. When one script runs the whole flow, wrap
+it with `jam record run --cdp 9222 --cdp 9223 … -- <script>` instead; the
+script reads the proxies from `$JAM_CDP_PROXIES`, space-separated in
+`--cdp` order (`$JAM_CDP_PROXY` is the first). The Console and Network
+panels combine every browser on one timeline.
 
 Limits:
 
@@ -186,6 +189,7 @@ Limits:
 - Older CLIs film the primary display for several `--cdp` with no selector.
   `jam record run --help` says which video several browsers get.
 - If either browser quits, the recording is discarded with exit code 12.
+
 ## Make it readable
 
 **Pace it for the person who will watch it, not for yourself.** You read a
