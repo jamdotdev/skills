@@ -152,6 +152,40 @@ handing the link over.
 If `jam record start` or `run` fails, run `jam doctor` and report its
 Recording and Screencast lines. Do not hand over a link you did not get.
 
+
+## Record two signed-in users in one Jam
+
+For a flow that needs two users at once, such as a customer who asks for
+access and an admin who grants it, keep both users in one recording. Do not
+sign one user out and the other in.
+
+- **One Chrome, one browser context per user.** The default. Each context
+  has its own cookies and storage (Playwright: `browser.newContext()` on the
+  browser from `connectOverCDP(cdpProxy)`). One `--cdp` records every
+  context, and the video follows the page the driver acts in.
+- **One Chrome per user**, when the users need separate browser profiles.
+  Launch each Chrome with its own `--user-data-dir` and debug port, and
+  repeat `--cdp`:
+
+```
+jam record run --cdp 9222 --cdp 9223 --title "<the claim>" --json -- <script>
+```
+
+The script reads the proxies from `$JAM_CDP_PROXIES`, space-separated in
+`--cdp` order (`$JAM_CDP_PROXY` is the first), and drives each Chrome
+through its own proxy. The `start` receipt lists them in `browsers`. The
+Console and Network panels combine every browser on one timeline.
+
+Limits:
+
+- The video shows one page at a time: the page, or the browser, the driver
+  last acted in. An action sent straight to Chrome, not through the proxy,
+  does not move the video.
+- Two browsers side by side need screen video: put both windows on one
+  display and pass `--display <id>`. That is rung 3, so ask first.
+- Older CLIs film the primary display for several `--cdp` with no selector.
+  `jam record run --help` says which video several browsers get.
+- If either browser quits, the recording is discarded with exit code 12.
 ## Make it readable
 
 **Pace it for the person who will watch it, not for yourself.** You read a
