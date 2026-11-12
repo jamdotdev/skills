@@ -159,11 +159,8 @@ For a flow that needs two users at once, such as a customer who asks for
 access and an admin who grants it, keep both users in one recording. Do not
 sign one user out and the other in.
 
-- **One Chrome, one browser context per user.** The default. Each context
-  has its own cookies and storage (Playwright: `browser.newContext()` on the
-  browser from `connectOverCDP(cdpProxy)`). One `--cdp` records every
-  context, and the video follows the page the driver acts in.
-- **One Chrome per user**, when the users need separate browser profiles.
+- **One Chrome per user.** The default: the video shows both pages side by
+  side, so the person watching sees the admin act while the customer waits.
   Launch each Chrome with its own `--user-data-dir` and debug port, and
   repeat `--cdp`:
 
@@ -179,13 +176,17 @@ script reads the proxies from `$JAM_CDP_PROXIES`, space-separated in
 `--cdp` order (`$JAM_CDP_PROXY` is the first). The Console and Network
 panels combine every browser on one timeline.
 
+- **One Chrome, one browser context per user**, when only one Chrome can
+  run. Each context has its own cookies and storage (Playwright:
+  `browser.newContext()` on the browser from `connectOverCDP(cdpProxy)`),
+  and one `--cdp` records every context. The video shows one page at a
+  time: the page the driver acts in.
+
 Limits:
 
-- The video shows one page at a time: the page, or the browser, the driver
-  last acted in. An action sent straight to Chrome, not through the proxy,
-  does not move the video.
-- Two browsers side by side need screen video: put both windows on one
-  display and pass `--display <id>`. That is rung 3, so ask first.
+- Each browser shows its visible tab, side by side in `--cdp` order. A video
+  wider than 4096 pixels is scaled down, so keep to two 1920-pixel browsers.
+- `stop` takes longer: it encodes the side-by-side video once more.
 - Older CLIs film the primary display for several `--cdp` with no selector.
   `jam record run --help` says which video several browsers get.
 - If either browser quits, the recording is discarded with exit code 12.
