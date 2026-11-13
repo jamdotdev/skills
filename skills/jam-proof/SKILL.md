@@ -184,8 +184,10 @@ panels combine every browser on one timeline.
 
 Limits:
 
-- Each browser shows its visible tab, side by side in `--cdp` order. A video
-  wider than 4096 pixels is scaled down, so keep to two 1920-pixel browsers.
+- Each browser shows its visible tab, side by side in `--cdp` order, under a
+  `Browser N · host:port` label. Say in the Jam which browser is which user.
+- A video wider than 4096 pixels is scaled down, so keep to two 1920-pixel
+  browsers.
 - `stop` takes longer: it encodes the side-by-side video once more.
 - Older CLIs film the primary display for several `--cdp` with no selector.
   `jam record run --help` says which video several browsers get.
