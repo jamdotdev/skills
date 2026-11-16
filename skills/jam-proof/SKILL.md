@@ -152,6 +152,15 @@ handing the link over.
 If `jam record start` or `run` fails, run `jam doctor` and report its
 Recording and Screencast lines. Do not hand over a link you did not get.
 
+## Record two signed-in users in one Jam
+
+For a flow that needs two users at once, such as a customer who asks for
+access and an admin who grants it, keep both users in one recording: one
+Chrome per user, each with its own `--user-data-dir`, and one `--cdp` per
+Chrome. Do not sign one user out and the other in.
+[references/several-users.md](references/several-users.md) has the commands,
+the grid sizes and the limits.
+
 ## Make it readable
 
 **Pace it for the person who will watch it, not for yourself.** You read a
