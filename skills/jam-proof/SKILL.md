@@ -40,10 +40,10 @@ someone's machine on camera.
 
 1. **Headless Chrome.** The default. It records the page, not a screen, so
    the person keeps working with nothing of theirs in frame, and the run
-   works the same on a laptop, a container or CI. `jam record start
-   --cdp <endpoint>` with no window or display selector takes the video from
-   Chrome itself, so there is no window to keep uncovered and no display to
-   keep awake, and the Console and Network panels fill from the same tap.
+   works the same on a laptop, a container or CI. `jam record start` with
+   one `--cdp <endpoint>` and no window or display selector takes the video
+   from Chrome itself, so there is no window to keep uncovered and no display
+   to keep awake, and the Console and Network panels fill from the same tap.
    See *Record a browser an agent drives*.
 2. **One window**, when the proof needs what a page-only capture cannot show:
    the address bar, a Chrome dialog, a file picker, or a desktop app that is
@@ -127,7 +127,7 @@ agent-browser --session proof record stop
 jam record stop <session> --json
 ```
 
-With `--cdp` and no window or display selector the video is a 30 fps
+With one `--cdp` and no window or display selector the video is a 30 fps
 screencast of the page in the visible tab: no address bar, cursor or Chrome
 dialogs, no Screen Recording permission, no window to keep uncovered.
 

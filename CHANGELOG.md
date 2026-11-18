@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `jam-proof` says its single-browser screencast applies to one `--cdp`; several `--cdp` follow "Record two signed-in users in one Jam".
 - `jam-proof` explains how to record two signed-in users in one Jam: one Chrome per user with repeated `--cdp`, which shows the pages side by side (a 2x2 grid for four users) under a `Browser N · host:port` label, with the viewport sizes that give a 1080p row, or one browser context per user under one `--cdp`, and the limits of each.
 - ChatGPT/Codex directory package is submittable without hand-edits: `.mcp.json` (Jam URL plus `"type": "http"` for Claude plugin validate), a short description of at most 30 characters ("Debug and test from Jam links"), version 1.36.3 matching Jam MCP / `server.json`, and generated release notes. The packager stamps the version from `server.json`; CI fails if Codex drifts. The zip now ships `jam`, `jam-fix`, `jam-to-e2e`, `jam-to-tasks` and `jam-to-ticket`. `jam-to-tasks` and `jam-to-ticket` use Jam MCP first, with CLI steps in `references/cli.md`, so ChatGPT does not stop for a missing `jam` binary.
 - Links to the Jam CLI and Jam MCP docs use their canonical URLs, `https://jam.dev/docs/cli` and `https://jam.dev/docs/jam-mcp`, instead of short links that redirect.
